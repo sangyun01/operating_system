@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <string.h>
+#include <sys/wait.h>
 
 int main(int argc, char *argv[]) {
     printf("hello world (pid:%d)\n", (int) getpid()); // print the PID about parent process
@@ -12,23 +14,24 @@ int main(int argc, char *argv[]) {
         exit(1);
     } else if (rc == 0) { // child process
         printf("hello, I am child (pid:%d)\n", (int) getpid()); // has PID(different about parent PID) 
+        char *myargs[3];
+        myargs[0] = strdup("wc");   // wc program execution
+        myargs[1] = strdup("p3.c"); // execution file name
+        myargs[2] = NULL;           // must done end is NULL
+        execvp(myargs[0], myargs);
+        printf("this shouldn't print out");
+        // when the success the program then, not print the message. reason why no return. 
     } else { // parent process path
+        int wc = wait(NULL); // wait when the child process is done
         printf("hello, I am parent of %d (pid:%d)\n",rc, (int) getpid());
         // rc -> child PID, getpid -> parent process
     }
     return 0;
 }
 
-// result is two case
+// result -> when the child process is done, than parent process is working
 /*
-1 case : 주로 parent process가 먼저 끝나기에 1 case의 결과가 주로 나옴.
 hello world (pid : 29146)
-hello, I am parent of 29147 (pid : 29146)
-hello, I am child (pid : 29147)
-
-2 case
-hello world (pid : 29146)
-hello, I am child (pid : 29147)
-hello, I am parent of 29147 (pid : 29146)
-
+hello, I am child (pid : 29147) // child process
+hello, I am parent of 29147 (pid : 29146) // parent process
 */
