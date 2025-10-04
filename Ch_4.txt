@@ -1,0 +1,15 @@
+OS(Operating System) - HW와 APP 사이에서 작동한다.
+
+
+** CPU virtualizing
+    - OS can promote the illusion that many virtual CPUs exist : CPU가 여러개로 가상으로 존재하도록 보이게 한다
+    - HOW? Using Time Sharing method - 짧은 순간에 동작하여, 사람이 느끼기에 동시에 작동한다.
+    - time과 order의 결정 - Scheduling policy에 따라 정해지며, 이때 시간에 따라 나누어 쓰기에, Performance 저하가 발생하게 된다.
+
+** Process : Running Program
+    Memory      : Instructions, Data Section
+    Registers   : PC, sp, GPIO
+
+program은 실행되기 전에 Disk에 위치해 있으며, 이때 실행가능한 file 형태로 존재한다.(executable format)
+    -> Program을 실행하면 Memory에 있는 code, data, heap stack을 CPU에 Register 형태로 이동하게 된다.
+
