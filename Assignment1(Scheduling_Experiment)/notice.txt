@@ -1,0 +1,57 @@
+- The objective of this assignment is to apply the scheduling algorithms studied in class to a real Linux environment (e.g., Ubuntu) and analyze process behavior under different policies.
+- The source code (my_program.c) and a detailed PDF instruction guide will be provided separately.
+
+- 이번 과제에서는 수업 시간에 학습한 Unix 계열의 스케줄링 알고리즘을 실제 리눅스 환경(Ubuntu )에서 실행해 보고, 정책별로 프로세스의 동작 특성을 직접 관찰하고 분석하는 것을 목표로 함.
+- 실험에는 제공되는 my_program 코드를 사용하며, 'my_program.c'와 상세 안내 PDF는 별도로 제공될 예정
+--------------------------------------------------------------------------------------------
+Topics to Cover (실험 주제)
+Comparison of Scheduling Policies for CPU-bound Jobs
+Run my_program in CPU-bound mode under CFS (Completely Fair Scheduler), RR (Round Robin), and FIFO (First-In First-Out).
+Note: CFS is the default Linux scheduler. It resembles MLFQ (Multi-Level Feedback Queue) and Stride/Lottery Scheduling in concept, but is implemented as a mathematically structured algorithm balancing fairness and efficiency.
+CPU-bound vs IO-like Workloads
+Run my_program in both CPU-bound and IO-like modes.
+Observe and compare differences under the three scheduling policies.
+Effect of Priority
+Run my_program under RR and FIFO, experimenting with different real-time priority values (1–99).
+Run my_program under CFS, varying the nice value to see how relative priority influences scheduling.
+Additional Experiments
+Explore various combinations of scheduling policies and priorities.
+Derive and summarize insights from your observations.
+
+CPU-bound 작업의 스케줄링 정책 비교
+my_program을 CPU-bound 모드로 실행하여 CFS(Completely Fair Scheduler), RR(Round Robin), FIFO(First-In First-Out)에서의 차이 비교
+참고: CFS는 리눅스의 기본 스케줄러로, MLFQ(Multi-Level Feedback Queue)나 Stride/Lottery Scheduling과 유사한 개념을 수학적으로 정리하여 구현한 알고리즘
+CPU-bound vs IO-like 작업 비교
+my_program을 CPU-bound 모드와 IO-like 모드로 각각 실행
+세 가지 스케줄링 정책에서 동작 차이 관찰
+Priority 영향 분석
+my_program을 RR, FIFO 정책에서 실행하며 우선순위를 달리 주었을 때의 차이 관찰
+CFS에서는 nice 값을 조정하여 상대적 우선순위가 Scheduling에 미치는 영향 관찰
+추가 실험
+my_program을 여러 개 동시에 실행하여 다양한 조합 실험
+관찰 결과로부터 insight 도출
+--------------------------------------------------------------------------------------------
+Deliverables(제출물)
+Report (PDF)
+A template is provided in both LaTeX and Word formats.
+Final submission must be in PDF format.
+The report must not exceed 3 pages.
+Language: you may choose either English or Korean, depending on preference.
+Content should include:
+Experimental setup (commands, parameters, environment).
+Observations (logs, screenshots, measurements).
+Analysis of results and comparison between policies.
+Insights and conclusions
+Etc.
+보고서 형식
+보고서 템플릿은 LaTeX 및 Word 두 가지 형식으로 제공됨
+최종 제출은 반드시 PDF로 제출
+분량: 3페이지 이내로 제한
+작성 언어: 영어 또는 한국어 중 선택
+보고서 내용
+실험 환경 및 방법 (사용한 명령어, 실행 옵션 등)
+관찰 결과 (로그, 스크린샷, 측정 수치 등)
+결과 분석 및 정책 간 비교
+실험을 통해 도출한 결론 및 insight
+기타
+--------------------------------------------------------------------------------------------
