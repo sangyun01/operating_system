@@ -1,0 +1,75 @@
+Process API
+
+major ftn : fork(), wait(), exec()
+
+** fork() : Create a child process
+    - The child process has the same memory contents as the parents.
+    : child process는 parent process와 동일한 contents를 가지고 있음.(duplicate, replicate)
+    - The child process is allocated in separate memory space from the parent process.
+    : 동일한 내용을 가지고 있지만, 메모리 할당된 공간은 서로 독립적으로 존재한다.
+    - The child process has its own registers, and program counter register(PC).
+    : register와 PC는 동일한 contents를 가지고 있지만, PID가 다르기에 return이 다르며, 이후의 과정은 서로 독립적이다.
+    parent의 경우 고유한 PID를 이미 가지고 있으며, fork로 생성된 child process의 경우 parent와 다른 고유한 PID를 가진다.
+
+fork() process result 3 types
+rc = 0  -> child process (success)
+rc > 0  -> parent process (success)
+rc = -1 -> failed fork
+
+Reference code - p1.c
+getPID() -> 현재 코드에서 실행되고 있는 process의 PID를 가져옴.
+fork()만 한 경우 parent process와 child process 사이 의존성이 없기에, 결과는 2개가 모두 가능하다.
+    -> 대부분 parent process가 우선적으로 끝나긴 하나, child process가 먼저 끝날 수도 있다.
+
+** wait() : Create the dependency between the processes.(parent process와 child process 사이에 의존성을 만들어준다.)
+    - When the child process is created, wait() in the parent process won't return until the child has run and exited.
+    : wait process를 사용하면, child process가 끝나기 전까지, parent process는 작동하지 않는다.
+    - The parent and the child does not have any dependency
+    : fork()만 한 상태에서는 두 process 사이에 의존성이 X
+    
+ex) child process가 완료된 후, parent process가 완료되어야 하는 상황 -> wait()을 쓴다.
+Reference code - p2.c
+-> parent code part에 int wc = wait(NULL)을 추가한다. -> child process가 완료된다면, wc에 완료된 child process PID가 저장된다.
+주의사항 : child process가 여러 개이더라도, 1개만 종료되면 wait()는 종료된다. -> 해결하려면 loop ftn를 사용한다.
+
+** exec() : Running a new program
+    - The caller wants to run a program that is different from the caller itself.
+    : exec()을 호출한 process가 다른 실행 파일로 바뀌는 상황
+    - OS needs to load a new binary image, initialize a new stack, initialize a new heap for the new program.
+    : 새로운 program을 호출한다면 OS에서는 새로운 실행파일을 메모리에 load한 후 stack과 heap을 새로 초기화한다.    
+    - exec() starts to execute the new program and does not return
+    : exec()이 호출되면 return을 하지 않는다 -> exec() 다음 줄에 error message를 두면 확인이 가능하다.
+    대부분 exec의 경우 parent process를 fork한 child process를 실행시킨다. -> child process code에서 일어난다.
+    2 parameters
+        - the name of the binary file
+        - the array of arguments
+
+Reference code - p3.c
+char *myargs[3];                // array 선언
+myargs[0] = strdup("wc");       // the name of the binary file : 실행할 프로그램 이름 -> wc
+myargs[1] = strdup("p3.c");     // the array of arguments : 프로그램에 전달할 인자 (파일 이름)
+myargs[2] = NULL;               // argv 배열의 끝은 반드시 NULL
+execvp(myargs[0], myargs);      // wc 프로그램을 실행
+-> 의미 : p3.c 파일을 인자로 받아서, wc program을 실행한다.
+
+** Why separating fork() and exec()
+    : reason why separate -> between fork() and exec() ftn can insert I/O direction, pipeline
+
+Reference code - p4.c
+    close(STDOUT_FILENO);
+    open("./p4.output", O_CREAT | O_WRONLY | O_TRUNC, S_IRWXU);
+
+    char *myargs[3];
+    myargs[0] = strdup("wc");   
+    myargs[1] = strdup("p3.c"); 
+    myargs[2] = NULL;           
+    execvp(myargs[0], myargs);
+
+-> close(STDOUT_FILENO); // 터미널을 닫고
+-> open("./p4.output", O_CREAT | O_WRONLY | O_TRUNC, S_IRWXU); // p4.output 이름을 가진 file을 열고
+-> char *myargs[3];
+    myargs[0] = strdup("wc");   
+    myargs[1] = strdup("p3.c"); 
+    myargs[2] = NULL;           
+    execvp(myargs[0], myargs);
+    // 의 실행 결과를 p4.output에 쓰는 구조
