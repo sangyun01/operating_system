@@ -18,7 +18,10 @@ We set **4 Assumptions** and then relax each of them:
 ### Turnaround Time
 The time at which the job completes minus the time at which the job arrived in the system.  
 → 완료된 시간 - 도착한 시간 = 동작시간  
-→ **T_turnaround = T_completion - T_arrival**
+
+$$
+T_{turnaround} = T_{completion} - T_{arrival}
+$$
 
 ### Fairness
 Performance and fairness are often at odds in scheduling.
@@ -26,7 +29,10 @@ Performance and fairness are often at odds in scheduling.
 ### Response Time
 The time from when the job arrives to the first time it is scheduled.  
 → 하나의 job이 처음 실행된 시간  
-→ **T_response = T_firstrun - T_arrival**
+
+$$
+T_{response} = T_{firstrun} - T_{arrival}
+$$
 
 ---
 
@@ -43,8 +49,13 @@ A, B, C → each job runs for 10s & order (A→B→C)
 | B | 20s | 0s | 20s |
 | C | 30s | 0s | 30s |
 
-**Average Turnaround time** = (10+20+30)/3 = **20s**  
-**Average Response time** = (0+10+20)/3 = **10s**
+$$
+\text{Average Turnaround Time} = \frac{10 + 20 + 30}{3} = 20s
+$$
+
+$$
+\text{Average Response Time} = \frac{0 + 10 + 20}{3} = 10s
+$$
 
 ---
 
@@ -58,8 +69,14 @@ A=100s, B=10s, C=10s & order (A→B→C)
 | B | 110s | 0s | 110s |
 | C | 120s | 0s | 120s |
 
-**Average Turnaround time** = (100+110+120)/3 = **110s**  
-**Average Response time** = (0+100+110)/3 = **70s**  
+$$
+\text{Average Turnaround Time} = \frac{100 + 110 + 120}{3} = 110s
+$$
+
+$$
+\text{Average Response Time} = \frac{0 + 100 + 110}{3} = 70s
+$$
+
 → Too long Turnaround time
 
 ---
@@ -76,8 +93,13 @@ A=100s, B=10s, C=10s → order: B→C→A
 | B | 10s | 0s | 10s |
 | C | 20s | 0s | 20s |
 
-**Average Turnaround time** = (120+10+20)/3 = **50s**  
-**Average Response time** = (20+0+10)/3 = **10s**
+$$
+\text{Average Turnaround Time} = \frac{120 + 10 + 20}{3} = 50s
+$$
+
+$$
+\text{Average Response Time} = \frac{20 + 0 + 10}{3} = 10s
+$$
 
 ---
 
@@ -93,8 +115,14 @@ T_A,arrive=0s / T_B,arrive=10s / T_C,arrive=10s
 | B | 110s | 10s | 100s |
 | C | 120s | 10s | 110s |
 
-**Average Turnaround time** = (100+100+110)/3 = **103.3s**  
-**Average Response time** = (0+100+110)/3 = **70s**  
+$$
+\text{Average Turnaround Time} = \frac{100 + 100 + 110}{3} = 103.3s
+$$
+
+$$
+\text{Average Response Time} = \frac{0 + 100 + 110}{3} = 70s
+$$
+
 → Too long Turnaround time
 
 ---
@@ -113,8 +141,14 @@ T_A,arrive=0s / T_B,arrive=10s / T_C,arrive=10s
 | B | 20s | 10s | 10s |
 | C | 30s | 10s | 20s |
 
-**Average Turnaround time** = (120+10+20)/3 = **50s**  
-**Average Response time** = (0+10+20)/3 = **10s**  
+$$
+\text{Average Turnaround Time} = \frac{120 + 10 + 20}{3} = 50s
+$$
+
+$$
+\text{Average Response Time} = \frac{0 + 10 + 20}{3} = 10s
+$$
+
 → Considers Response time as well
 
 ---
@@ -131,24 +165,34 @@ T_A,arrive=0s / T_B,arrive=10s / T_C,arrive=10s
 Example: A, B, C → each job runs for 5s, all arrive at 0s
 
 #### SJF
-| Job | Completion | First Run | |
+| Job | Completion | First Run |
 |-----|-------------|------------|
 | A | 5s | 0s |
 | B | 10s | 5s |
 | C | 15s | 10s |
 
-**Average Turnaround time** = (5+10+15)/3 = **10s**  
-**Average Response time** = (0+5+10)/3 = **5s**
+$$
+\text{Average Turnaround Time} = \frac{5 + 10 + 15}{3} = 10s
+$$
+
+$$
+\text{Average Response Time} = \frac{0 + 5 + 10}{3} = 5s
+$$
 
 #### RR (Time slice = 1s)
-| Job | Completion | First Run | |
+| Job | Completion | First Run |
 |-----|-------------|------------|
 | A | 13s | 0s |
 | B | 14s | 1s |
 | C | 15s | 2s |
 
-**Average Turnaround time** = (13+14+15)/3 = **14s**  
-**Average Response time** = (0+1+2)/3 = **1s**
+$$
+\text{Average Turnaround Time} = \frac{13 + 14 + 15}{3} = 14s
+$$
+
+$$
+\text{Average Response Time} = \frac{0 + 1 + 2}{3} = 1s
+$$
 
 → Response time and time slice length are trade-offs.  
 → When switching between A→B or B→C, a **context switch overhead** occurs.
@@ -168,8 +212,13 @@ B runs CPU 50s only
 | A | 90s (0→10, 20→30, 40→50, 60→70, 80→90) | 90s |
 | B | 140s (90→140) | 140s |
 
-**Average Turnaround time** = (90+140)/2 = **115s**  
-**Average Response time** = (0+90)/2 = **45s**
+$$
+\text{Average Turnaround Time} = \frac{90 + 140}{2} = 115s
+$$
+
+$$
+\text{Average Response Time} = \frac{0 + 90}{2} = 45s
+$$
 
 → Using Overlap (Incorporating I/O)
 
@@ -182,5 +231,10 @@ B runs CPU 50s only
 | A | 90s (0→10, 20→30, 40→50, 60→70, 80→90) | 90s |
 | B | 100s (10→20, 30→40, 50→60, 70→80, 90→100) | 100s |
 
-**Average Turnaround time** = (90+100)/2 = **95s**  
-**Average Response time** = (0+10)/2 = **5s**
+$$
+\text{Average Turnaround Time} = \frac{90 + 100}{2} = 95s
+$$
+
+$$
+\text{Average Response Time} = \frac{0 + 10}{2} = 5s
+$$
