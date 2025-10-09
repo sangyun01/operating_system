@@ -1,0 +1,138 @@
+* Scheduling : Introduction
+
+** We set 4 Assumptions and relax the Assumption
+    - Each jobs run same amount of time : 모든 jobs의 process 시간이 동일하다.
+    - all jobs arrive at the same time  : 동시에 jobs들이 도착한다.
+    - all jobs only use CPU             : CPU만 사용한다.
+    - run-time of each job is known     : 언제 끝나는지 알고 있다.
+
+** Concept
+Turnaround time : The time at which the job completes minus the time at which the job arrived in the system.
+    -> 완료된 시간 - 도착한 시간 = 동작시간
+    => T_turnaround =T_completion - T_arrival
+fairness : Performance and fairness are often at adds in scheduling
+Response time : The time from when the job arrives to the first time it it scheduled.
+    -> 하나의 job이 처음 실행된 시간
+    -> T_response = T_firstrun - T_arrival
+
+** FIFO (First In First Out) / FCFS(First Come First Served)
+    -> Very simple and easy to implement
+
+Using 4 Assumption We Set example
+A, B, C => each job runs for 10s & order (A->B->C)
+T_A,completion = 10s
+T_B,completion = 20s
+T_C,completion = 30s
+T_all,arrive = 0s
+
+Average Turnaround time = (10+20+30) / 3 = 20s
+Average Response time = (0 + 10 + 20) / 3 = 10s
+
+Then we relax the 1st Assumption. (Each jobs run same amount of time)
+A, B, C => A = 100s, B = 10s, C = 10s & order (A->B->C)
+T_A,completion = 100s
+T_B,completion = 110s
+T_C,completion = 120s
+T_all,arrive = 0s
+
+Average Turnaround time = (100+110+120) / 3 = 110s
+Average Response time = (0 + 100 + 110) / 3 = 70s
+-> Too longer Turnaround time
+
+** SJF(Shortes Job First)
+    -> Run the shortest job firstm then the next shortest, and so on
+A, B, C => A = 100s, B = 10s, C = 10s, same time then left is 1st
+-> order : B -> C -> A
+T_A,completion = 120s
+T_B,completion = 10s
+T_C,completion = 20s
+T_all,arrive = 0s
+
+Average Turnaround time = (120+10+20) / 3 = 50s
+Average Response time = (20 + 0 + 10) / 3 = 10s
+
+Then we relax the 2nd Assumption. (all jobs arrive at the same time)
+A, B, C => A = 100s, B = 10s, C = 10s, T_A,arrive = 0s / T_B,arrive = 10s / T_C,arrive = 10s
+-> order : A -> B -> C
+T_A,completion = 100s
+T_B,completion = 110s
+T_C,completion = 120s
+T_A,turnaround = T_A,completion - T_A,arrive = 100s - 0s = 100s
+T_B,turnaround = T_B,completion - T_B,arrive = 110s - 10s = 100s 
+T_C,turnaround = T_C,completion - T_C,arrive = 120s - 10s = 110s
+
+Average Turnaround time = (100+100+110) / 3 = 103.3s
+Average Response time = (0 + 100 + 110) / 3 = 70s
+-> Too longer Turnaround time
+
+** STCF(Shortest Time to completion First)
+    -> when a new job enters the system -> determine of the remaining jobs and new job
+A, B, C => A = 100s, B = 10s, C = 10s, T_A,arrive = 0s / T_B,arrive = 10s / T_C,arrive = 10s
+-> order : A -> B(A stop) -> C -> A'
+T_A,completion = 120s
+T_B,completion = 20s
+T_C,completion = 30s
+T_A,turnaround = T_A,completion - T_A,arrive = 120s - 0s = 120s
+T_B,turnaround = T_B,completion - T_B,arrive = 20s - 10s = 10s 
+T_C,turnaround = T_C,completion - T_C,arrive = 30s - 10s = 20s
+
+Average Turnaround time = (120+10+20) / 3 = 50s
+Average Response time = (0 + 10 + 20) / 3 = 10s
+-> Then we also consider Response time
+
+** RR (Round Robin)
+    -> Run a job for a time slice and then switch to the next job in the run queue until the jobs are finished
+    -> 실행중인 job을 slice한다.
+
+*** Compare SJF vs RR
+ex. A, B, C => each job runs for 5s & T_all,arrive = 0s
+SJF
+T_A,completion = 5s
+T_B,completion = 10s
+T_C,completion = 15s
+T_A,firstrun = 0s
+T_B,firstrun = 5s
+T_C,firstrun = 10s
+
+Average Turnaround time = (5 + 10 + 15) / 3 = 10s
+Average Response time = (0 + 5 + 10) / 3 = 5s
+
+RR (with a time slice of 1sec)
+T_A,completion = 13s
+T_B,completion = 14s
+T_C,completion = 15s
+T_A,firstrun = 0s
+T_B,firstrun = 1s
+T_C,firstrun = 2s
+
+Average Turnaround time = (13 + 14 + 15) / 3 = 14s
+Average Response time = (0 + 1 + 2) / 3 = 1s
+
+=> Response time and short time slice is trade off relation
+    -> when A->B , B->C in process occur the context switch -> overhead가 발생한다.
+
+Then we relax the 3rd Assumption. (all jobs arrive at the same time)
+A, B => A = 50s, B = 50s, order : A -> B, T_A,arrive = 0s / T_B,arrive = 0s
+A runs for 10s and then issues an I/O request
+    -> each I/O request take 10s
+B runs CPU 50s only
+
+T_A,completion = 90s (0→10 | 20→30 | 40→50 | 60→70 | 80→90)
+T_B,completion = 140s (90→140)
+T_A,turnaround = T_A,completion - T_A,arrive = 90s - 0s = 90s
+T_B,turnaround = T_B,completion - T_B,arrive = 140s - 0s = 140s 
+
+Average Turnaround time = (90 + 140) / 2 = 115s
+Average Response time = (0 + 90) / 2 = 45s
+-> Using Overlap(Incorporating I/O)
+
+Incorporating I/O -> (Block state)
+T_A,completion = 90s    (0→10   | 20→30 | 40→50 | 60→70 | 80→90 )
+T_B,completion = 100s   (10→20  | 30→40 | 50→60 | 70→80 | 90→100)
+T_A,turnaround = T_A,completion - T_A,arrive = 90s - 0s = 90s
+T_B,turnaround = T_B,completion - T_B,arrive = 100s - 0s = 100s 
+
+Average Turnaround time = (90 + 100) / 2 = 95s
+Average Response time = (0 + 10) / 2 = 5s
+
+
