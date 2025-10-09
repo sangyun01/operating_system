@@ -1,186 +1,131 @@
-# Scheduling : Introduction
+# Operating System Overview
 
 ---
 
-## Assumptions
-
-We set **4 Assumptions** and then relax each of them:
-
-1. **Each job runs same amount of time** → 모든 jobs의 process 시간이 동일하다.  
-2. **All jobs arrive at the same time** → 동시에 jobs들이 도착한다.  
-3. **All jobs only use CPU** → CPU만 사용한다.  
-4. **Run-time of each job is known** → 언제 끝나는지 알고 있다.
+## OS (Operating System)
+> **OS operates between Hardware (HW) and Application (APP).**
 
 ---
 
-## Concept
+## CPU Virtualization
 
-### Turnaround Time
-The time at which the job completes minus the time at which the job arrived in the system.  
-→ 완료된 시간 - 도착한 시간 = 동작시간  
-→ **T_turnaround = T_completion - T_arrival**
+- **OS can promote the illusion that many virtual CPUs exist.**  
+  → CPU가 여러 개로 존재하는 것처럼 보이게 한다.  
 
-### Fairness
-Performance and fairness are often at odds in scheduling.
+- **How?** Using the **Time Sharing** method  
+  → 아주 짧은 순간마다 CPU를 여러 프로세스가 번갈아 사용하므로 사람이 보기에는 동시에 실행되는 것처럼 느껴진다.  
 
-### Response Time
-The time from when the job arrives to the first time it is scheduled.  
-→ 하나의 job이 처음 실행된 시간  
-→ **T_response = T_firstrun - T_arrival**
+- **Time and order decision:** Determined by the **Scheduling Policy**.  
+  → CPU를 시간 단위로 나누어 쓰기 때문에 성능(Performance) 저하가 발생할 수 있다.
 
 ---
 
-## FIFO (First In First Out) / FCFS (First Come First Served)
+## Process : Running Program
 
-→ Very simple and easy to implement
-
-### Example (with all assumptions)
-A, B, C → each job runs for 10s & order (A→B→C)
-
-| Job | Completion Time | Arrival | Turnaround |
-|-----|-----------------|----------|-------------|
-| A | 10s | 0s | 10s |
-| B | 20s | 0s | 20s |
-| C | 30s | 0s | 30s |
-
-**Average Turnaround time** = (10+20+30)/3 = **20s**  
-**Average Response time** = (0+10+20)/3 = **10s**
+| 구성 요소 | 설명 |
+|------------|------|
+| **Memory** | Instructions, Data Section |
+| **Registers** | PC (Program Counter), SP (Stack Pointer), GPIO 등 |
 
 ---
 
-### Relax 1st Assumption (Each job runs same amount of time)
+## Process API
 
-A=100s, B=10s, C=10s & order (A→B→C)
+> These APIs are available on any modern OS.  
+> 대부분의 OS에서 이름은 다를 수 있지만, 기능적으로 동일한 5가지 기능을 가진다.
 
-| Job | Completion Time | Arrival | Turnaround |
-|-----|-----------------|----------|-------------|
-| A | 100s | 0s | 100s |
-| B | 110s | 0s | 110s |
-| C | 120s | 0s | 120s |
-
-**Average Turnaround time** = (100+110+120)/3 = **110s**  
-**Average Response time** = (0+100+110)/3 = **70s**  
-→ Too long Turnaround time
+1. **Create**
+2. **Destroy**
+3. **Wait**
+4. **Miscellaneous Control**
+5. **Status**
 
 ---
 
-## SJF (Shortest Job First)
+## Create Process (Detailed Steps)
 
-→ Run the shortest job first, then the next shortest, and so on.
+### **Order**
+**Load → Stack → Heap → Other initialization → Start Program**
 
-A=100s, B=10s, C=10s → order: B→C→A
+#### 1. Load
+- Processor는 Disk에 직접 접근 불가.  
+- 따라서 Disk의 실행 파일이 **Code + Data** 형태로 **Memory**로 올라온다.  
+- 모든 파일이 한 번에 올라오는 것이 아니라, **필요한 부분만(lazily)** Load된다.  
+  → 전체를 한 번에 올리면 실행이 지연됨.
 
-| Job | Completion Time | Arrival | Turnaround |
-|-----|-----------------|----------|-------------|
-| A | 120s | 0s | 120s |
-| B | 10s | 0s | 10s |
-| C | 20s | 0s | 20s |
+#### 2. Stack
+- 프로그램 종료 시 사라지는 **지역 변수(local variables)**, **함수 매개변수(function parameters)** 저장.  
+- Stack이 할당될 때, `argc`, `argv` 배열이 초기화되어 main() 함수의 인자로 전달된다.
 
-**Average Turnaround time** = (120+10+20)/3 = **50s**  
-**Average Response time** = (20+0+10)/3 = **10s**
+#### 3. Heap
+- 사용자가 얼마나 공간을 사용할지 모를 때 **동적 할당 영역**.  
+- `malloc()`으로 공간을 확보하고, `free()`로 해제.
 
----
+#### 4. Other Initialization Tasks
+- I/O 요청 등 나머지 초기화 수행.  
+- 각 Process는 **input, output, error** 3개의 descriptor를 가짐.
 
-### Relax 2nd Assumption (All jobs arrive at the same time)
-
-A=100s, B=10s, C=10s  
-T_A,arrive=0s / T_B,arrive=10s / T_C,arrive=10s  
-→ order: A→B→C
-
-| Job | Completion | Arrival | Turnaround |
-|-----|-------------|----------|-------------|
-| A | 100s | 0s | 100s |
-| B | 110s | 10s | 100s |
-| C | 120s | 10s | 110s |
-
-**Average Turnaround time** = (100+100+110)/3 = **103.3s**  
-**Average Response time** = (0+100+110)/3 = **70s**  
-→ Too long Turnaround time
+#### 5. Start Program
+- Stack의 `argc`, `argv` 값을 이용하여 **main() 함수 실행**.
 
 ---
 
-## STCF (Shortest Time to Completion First)
+### **Program Execution Flow**
+프로그램은 실행되기 전 **Disk**에 존재하며 **executable format(실행 파일 형태)** 로 저장되어 있다.
 
-→ When a new job enters the system → compare remaining jobs and new job.
+$$
+\text{Disk → Memory → CPU}
+$$
 
-A=100s, B=10s, C=10s  
-T_A,arrive=0s / T_B,arrive=10s / T_C,arrive=10s  
-→ order: A → B(A stop) → C → A'
-
-| Job | Completion | Arrival | Turnaround |
-|-----|-------------|----------|-------------|
-| A | 120s | 0s | 120s |
-| B | 20s | 10s | 10s |
-| C | 30s | 10s | 20s |
-
-**Average Turnaround time** = (120+10+20)/3 = **50s**  
-**Average Response time** = (0+10+20)/3 = **10s**  
-→ Considers Response time as well
+| 단계 | 설명 |
+|------|------|
+| **Disk** | 실행 전 Code, Data가 존재 (예: SSD에 저장된 executable) |
+| **Memory** | 프로그램 실행 시 Code, Data가 Memory로 Load됨 |
+| **Memory** | Stack과 Heap이 생성됨 |
+| **CPU (Processor)** | Memory의 내용을 Fetch하여 Register에 저장 |
 
 ---
 
-## RR (Round Robin)
+## Process States
 
-→ Run a job for a time slice and then switch to the next job in the run queue until the jobs are finished.  
-→ 실행 중인 job을 slice 단위로 나누어 실행한다.
+A process can be in one of **three states**:
 
----
+| 상태 | 설명 |
+|------|------|
+| **Running** | 프로세스가 CPU에서 실행 중 |
+| **Ready** | 실행 가능하지만, CPU를 아직 배정받지 않음 |
+| **Blocked** | I/O 요청 등으로 CPU를 사용하지 못하는 상태 |
 
-### Compare SJF vs RR
-
-Example: A, B, C → each job runs for 5s, all arrive at 0s
-
-#### SJF
-| Job | Completion | First Run | |
-|-----|-------------|------------|
-| A | 5s | 0s |
-| B | 10s | 5s |
-| C | 15s | 10s |
-
-**Average Turnaround time** = (5+10+15)/3 = **10s**  
-**Average Response time** = (0+5+10)/3 = **5s**
-
-#### RR (Time slice = 1s)
-| Job | Completion | First Run | |
-|-----|-------------|------------|
-| A | 13s | 0s |
-| B | 14s | 1s |
-| C | 15s | 2s |
-
-**Average Turnaround time** = (13+14+15)/3 = **14s**  
-**Average Response time** = (0+1+2)/3 = **1s**
-
-→ Response time and time slice length are trade-offs.  
-→ When switching between A→B or B→C, a **context switch overhead** occurs.
+### **예시: I/O 요청**
+- CPU는 Disk에 직접 접근 불가.  
+- Disk I/O 요청 시, Disk → Memory로 데이터를 불러오는 동안 **다른 Process를 실행**시켜 CPU 활용도를 높임.  
+- 그렇지 않으면 CPU 자원이 낭비됨.
 
 ---
 
-### Relax 3rd Assumption (All jobs arrive at the same time)
+## Process State Transition
 
-A=50s, B=50s  
-Order: A→B, T_A,arrive=0s / T_B,arrive=0s
-
-A runs for 10s and then issues an I/O request (each I/O = 10s)  
-B runs CPU 50s only
-
-| Job | Completion | Turnaround |
-|------|-------------|-------------|
-| A | 90s (0→10, 20→30, 40→50, 60→70, 80→90) | 90s |
-| B | 140s (90→140) | 140s |
-
-**Average Turnaround time** = (90+140)/2 = **115s**  
-**Average Response time** = (0+90)/2 = **45s**
-
-→ Using Overlap (Incorporating I/O)
+```
+Running ↔ Ready     : Scheduler
+Running → Blocked → Ready → Running
+Running → Blocked   : I/O initiate
+Blocked → Ready     : I/O done
+```
 
 ---
 
-### Incorporating I/O (Block State)
+## Data Structures
 
-| Job | Completion | Turnaround |
-|------|-------------|-------------|
-| A | 90s (0→10, 20→30, 40→50, 60→70, 80→90) | 90s |
-| B | 100s (10→20, 30→40, 50→60, 70→80, 90→100) | 100s |
+### **PCB (Process Control Block)**
+- 각 프로세스의 정보를 포함.  
+- 주요 항목:
+  - PID (Process ID)
+  - PC (Program Counter)
+  - Process Name
+  - Location
+  - **Register Context:** 프로세스 상태를 정의하는 레지스터 집합
 
-**Average Turnaround time** = (90+100)/2 = **95s**  
-**Average Response time** = (0+10)/2 = **5s**
+### **Process List**
+- Ready Processes  
+- Blocked Processes  
+- Current Running Process
