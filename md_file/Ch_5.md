@@ -71,12 +71,10 @@ Child process가 완료된 후, parent process가 완료되어야 하는 상황�
 ```c
 int rc = fork();
 if (rc == 0) {
-    printf("hello
-");
+    printf("hello");
 } else {
     int wc = wait(NULL);
-    printf("goodbye (wc: %d)
-", wc);
+    printf("goodbye (wc: %d)", wc);
 }
 ```
 
