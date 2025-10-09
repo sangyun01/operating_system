@@ -1,0 +1,136 @@
+* Mechanism : Limited Direct Execution
+
+OS needs to share the physical CPU by time sharing.
+    -> OS는 제한된 CPU를 time sharing 기법으로 사용하여야 한다.
+-> Time sharing method has 2 Issue
+    -> Performance : Overhead를 최소화하여야 한다.
+    -> Control : OS가 제어권을 잃으면 안된다.
+
+** Control
+
+*** Direct Execution
+- run the program directly on the CPU : program을 직접적으로 CPU에 올린 상황
+
+Process (Direct Execution)
+1. Create entry for process list(OS): Process list와 PCB를 생성 (kernel mode에)
+2. Allocate memory for program(OS)  : 해당하는 program에 대한 memory를 할당한다.
+3. Load program into memory(OS)     : Disk에서 memory로 program을 load한다. (code, data)
+4. Set up stack with argc / argv(OS): stack과 heap, argc, argv도 초기화한다.
+5. Clear registers(OS)              : CPU에 있는 registers를 초기화한다.
+6. Execute call main(OS)            : main ftn를 실행시킨다.
+7. Run main(Program)                : Run main ftn
+8. Execute return from main(Program): main ftn이 끝나면 return한다.
+9. Free memory of process(OS)       : 할당된 memory -> Free
+10. Remove from process list(OS)    : PCB와 Process list 제거
+
+-> 문제점 : OS는 그저 Program을 진행하기 위한 library 역할정도만 -> 제어권이 없다.
+
+When the OS has not control, can occure the problem
+problem : OS can't prevent, inf loop
+    problem 1 (APP에서 잘못된 접근을 하여도 OS에서 막지 못한다.)
+        ex. 
+            int *i;
+            i = 0;  // 대부분의 OS에서 주소 0에는 중요한 data가 존재
+            *i = 1; // 중요한 data를 1로 변경한다. -> 고장 유발한다.
+        process perform some kind of restricted operation (I/O request to disk, CPU, memory에 User가 직접 접근)
+            Solution
+                User mode와 Kernel mode를 분리시킨다.
+                User mode   : Applications do not have full access to hardware resources.
+                    -> APP은 전반적으로 접근은 불가능하고, 제한된 접근이 있다.
+                Kernel mode : The OS has access to the full resources of the machine.
+                    -> OS는 전반적인 모든 접근이 가능하다.
+                이때 User mode와 Kernel mode는 System call을 통해 변경이 가능하다.
+                    System Call
+                        Trap instuction : User -> Kernel
+                            Trap table  : 예외상황에 대한 번호와 그에 해당하는 Trap hanler address를 가지고 있다.
+                                ex) 3번에 해당하는 예외가 0x08의 주소에 이 맞는 Trap hanler가 있다.
+                            Trap hanler : code를 실행한다. (Kernel mode에서)
+                        Return from Trap instuction : Kernel -> User
+
+Process (Limited Direct Execution)
+@ boot
+initialize trap table : OS에서 trap table을 실행하고, 이를 HW에 알려준다.
+remember address of ...
+syscall handler : HW에서 syscall handler 호출
+---
+@ run
+Create entry for process list : PCB, process list 생성
+Allocate memory for Program : program을 위한 메모리 할당
+Load program into memory로 : Disk에서 memory로 load
+Setup user stack with argv : stack, I/O 등의 준비
+Fill kernel stack with reg/PC : Kernel stack에 reg(0)값과 PC(main)를 채워넣는다.
+return-from -trap : Kernel -> User
+restore regs from kernel stack : Kernel stack에 있는 값들을 가져와 저장
+move to user mode : user mode로 복귀
+jump to main : HW -> APP
+Run main()... : main 실행
+Call system : system call 발생
+trap into OS : user -> kernel
+save regs to kernel stack : 현재 register값을 kernel stack에 저장
+move to kernel mode : kernel모드로 간다.
+jump to trap handler : kernel mode의 trap table을 보고, trap handler가 있는 주소로 간다.
+Handle trap : Handle trap
+Do work of syscall : system call code 작동
+return-from-trap : kernel -> User
+restore regs from kernel stack : 이전에 kernel stack에 저장한 register값을 다시 가져온다.
+move to user mode : User mode로
+jump to PC after trap : trap이 끝나면 register에 저장된 PC의 주소로 jump
+...
+return from main : main으로 복귀
+trap (via exit()) : process 종료를 위해 user -> kernel
+Free memory of process : process memory free
+Remove from process list : PCB, process list 제거
+
+    problem 2 (제어권을 돌려받지 못할 수 있다.)
+        ex.
+            i = -1;
+            while (i < 0) // inf loop이다. -> return하지 않는다. -> CPU Control이 불가능하다.
+                do something;
+        Solution
+            A Cooperative Approach : Wait for system calls      -> 자발적
+                Process periodically give up the CPU : like Yield
+                    problem -> inf loop와 같은 비협조적으로 나오면 곤란.
+            A Non-Cooperative Approach : The OS takes control   -> 강압적
+                A Cooperative Approach에서 발생하는 문제를 해결하기 위한 방법
+                OS가 시작하자마자 timer를 HW차원에서 돌려, 일정시간마다 제어권을 가져온다.
+
+*** Why OS need the Control
+Scheduler가 Process A -> Process B로 state를 바꾸고 싶다면?
+    -> Using context switch
+
+*** context switch
+A low level piece of assembly code
+    save a few register values for the current process onto its kernel stack
+Process A -> Process B
+-> 에서 발생하는 과정
+timer interrupt가 발생
+Scheduler가 Process B를 선택
+context switch가 A -> B를 선택한다.
+
+Process (Limited Direct Execution Protocol with Timer interrupt)
+@ boot
+initialize trap table : OS에서 trap table 생성
+remember address of ...  : HW에서 주소 기억
+syscall handler : syscall handler 호출
+timer handler : 이 중 timer handler 실행
+start interrupt timer : Kernel에서 timer 실행
+start Timer : HW차원에서 동작
+interrupt CPU in X ms : Xms마다 interrupt 발생
+---
+@ run
+Process A : APP에서
+...
+timer interrupt : HW에서 발생
+save regs(A) to k-stack(A) : Process A의 register값들을 kernel stack에 저장
+move to kernel mode : User -> Kernel
+jump to trap handler : trap handler로 jump
+Handle the trap : trap 처리
+Call switch() routine : switch routine 호출 (A->B)
+  save regs(A) to proc-struct(A) : register A를 PCB A에 저장
+  restore regs(B) from proc-struct(B) : PCB B에서 B의 값을 register에 저장
+  switch to k-stack(B) : Kernel B로 이동
+return-from-trap (into B) : Kernel -> User
+restore regs(B) from k-stack(B) : kernel B에 있는 값을 register에 저장
+move to user mode : user mode
+jump to B’s PC : register안에 있는 B의 PC값으로 jump
+Process B : B 실행
