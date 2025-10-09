@@ -36,13 +36,14 @@
 ### Reference Code : `p1.c`
 
 ```c
-int rc = fork();
-if (rc < 0) {
-    // fork failed
-} else if (rc == 0) {
-    // child process
-} else {
-    // parent process
+if (rc < 0) { // fork failed; exit  
+  fprintf(stderr, "fork failed\n");
+  exit(1);
+} else if (rc == 0) { // child process
+  printf("hello, I am child (pid:%d)\n", (int) getpid()); // has PID(different about parent PID) 
+} else { // parent process path
+  printf("hello, I am parent of %d (pid:%d)\n",rc, (int) getpid());
+  // rc -> child PID, getpid -> parent process
 }
 ```
 
@@ -69,12 +70,10 @@ Child process가 완료된 후, parent process가 완료되어야 하는 상황�
 
 #### Reference Code : `p2.c`
 ```c
-int rc = fork();
-if (rc == 0) {
-    printf("hello");
-} else {
-    int wc = wait(NULL);
-    printf("goodbye (wc: %d)", wc);
+else { // parent process path
+  int wc = wait(NULL); // wait when the child process is done
+  printf("hello, I am parent of %d (pid:%d)\n",rc, (int) getpid());
+  // rc -> child PID, getpid -> parent process
 }
 ```
 
@@ -109,12 +108,16 @@ if (rc == 0) {
 ### Reference Code : `p3.c`
 
 ```c
-char *myargs[3];
-myargs[0] = strdup("wc");       // binary name
-myargs[1] = strdup("p3.c");     // argument (filename)
-myargs[2] = NULL;               // argv 배열의 끝은 NULL
-
-execvp(myargs[0], myargs);      // wc program 실행
+else if (rc == 0) { // child process
+  printf("hello, I am child (pid:%d)\n", (int) getpid()); // has PID(different about parent PID) 
+  char *myargs[3];
+  myargs[0] = strdup("wc");   // wc program execution
+  myargs[1] = strdup("p3.c"); // execution file name
+  myargs[2] = NULL;           // must done end is NULL
+  execvp(myargs[0], myargs);
+  printf("this shouldn't print out");
+  // when the success the program then, not print the message. reason why no return. 
+}
 ```
 
 **Meaning:**  
@@ -131,14 +134,18 @@ execvp(myargs[0], myargs);      // wc program 실행
 ### Reference Code : `p4.c`
 
 ```c
-close(STDOUT_FILENO);
-open("./p4.output", O_CREAT | O_WRONLY | O_TRUNC, S_IRWXU);
+else if (rc == 0) { // child process
+  close(STDOUT_FILENO);   // closed the terminal
+  open("./p4.output", O_CREAT | O_WRONLY | O_TRUNC, S_IRWXU); // open the file (file : p4.output)
 
-char *myargs[3];
-myargs[0] = strdup("wc");
-myargs[1] = strdup("p3.c");
-myargs[2] = NULL;
-execvp(myargs[0], myargs);
+  char *myargs[3];
+  myargs[0] = strdup("wc");   // wc program execution
+  myargs[1] = strdup("p3.c"); // execution file name
+  myargs[2] = NULL;           // must done end is NULL
+  execvp(myargs[0], myargs);
+  printf("this shouldn't print out");
+  // when the success the program then, not print the message. reason why no return. 
+} 
 ```
 
 #### 설명
