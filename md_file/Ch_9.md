@@ -90,7 +90,7 @@ B: 75~99
 
 ## **U : Unfairness Metric**
 
-$$U = \frac{\text{First job completion time}}{\text{Second job completion time}}$$
+$U = \frac{\text{First job completion time}}{\text{Second job completion time}}$
 
 **예시**
 - 두 job의 실행시간이 각각 10이라면,  
@@ -109,9 +109,9 @@ $$U = \frac{\text{First job completion time}}{\text{Second job completion time}}
 ## **Stride Scheduling**
 
 ### **Stride 정의**
-\[
+$
 \text{Stride} = \frac{\text{A Large Number}}{\text{Number of Tickets}}
-\]
+$
 
 **예시**
 
