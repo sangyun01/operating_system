@@ -1,0 +1,124 @@
+* Scheduling : MLFQ(Multi Level Feedback Queue)
+
+** We set 4 Assumptions and relax the Assumption
+    - Each jobs run same amount of time : 모든 jobs의 process 시간이 동일하다.
+    - all jobs arrive at the same time  : 동시에 jobs들이 도착한다.
+    - all jobs only use CPU             : CPU만 사용한다.
+    - run-time of each job is known     : 언제 끝나는지 알고 있다.
+
+이미 이전에 가정 1,2,3에 대하여 relax를 진행하였다.
+마지막으로 run-time of each job is known의 가정을 relax를 하기 위해 적용한 scheduling method이다.
+
+** purpose (사전 정보 없이도 아래의 두 목적을 달성하기 위한 scheduling이다.)
+    - Optimze turnaround time   : turnaround time 최적화
+    - minimize response time    : 짧은 응답 시간
+
+** MLFQ Rules
+    Rule 1
+        if Priority(A) > Priority(B)
+            -> A runs
+    Rule 2
+        if Priority(A) = Priority(B)
+            -> A & B runs in RR(Round Robin -> time slice)
+    Rule 3
+        when a job enters the system, it is placed at the highest priority
+            -> 쳐음 들어오면 최상단에 위치한다.
+    Rule 4
+        Once a job uses up its time allotment at a given level(regardless of how many times it has given up the CPU),
+        its priority is reduced (i.e it moves down on queue)
+            -> 시간 소요 여부에 따라 priority level 강등 여부 판단 & 온전히 다 안써도, 점유를 너무 많이 하더라도 (time allotment를 넘기면) 강등
+    Rule 5
+        After some time period S, move all jobs in the system to the topmost queue.
+            -> 일정 주기마다 priority 초기화
+
+*** Rule 1 & Rule 2
+    더 높은 queue에 존재하는(우선순위가 더 높은) process부터 실행되며, 종료된 후 다음 queue에 있는 process가 실행된다. -> Rule 1
+    이때 하나의 process는 하나의 queue에만 존재해야한다. -> 동시에 다른 queue에 존재하지 않음.
+    
+    만약 우선순위가 동일하다면 Round Robin으로 time slice하여 동일한 process가 동작한다. -> Rule 2
+
+*** Rule 3 & Rule 4
+Select priority
+    MLFQ는 이전 행동을 기반으로 priority를 선택한다.
+    크게 2 type으로 분류한다.
+        1. IO request 위주  -> High priority
+            키보드 입력이 늦게 들어가면 사용자 입장에서 불편
+        2. CPU 중점         -> Low priority
+            response time보다는 turnaround time이 더 중점적인 process
+        
+    ex1)
+        8 Level Queue / 4EA process
+            Q8 -> A -> B
+            Q7
+            ..
+            Q4 -> C
+            ..
+            Q1 -> D
+        A & B가 RR으로 작동하며 완료 된 후 , C -> D 순으로 완료가 된다.
+    ex2)
+        if A는 IO request 중점, B는 실행 도중 IO request -> CPU 중점으로 상태가 변한다면
+            Q8 -> A
+            Q7 -> B (로 priority가 내려간다.)
+            ..
+            Q4 -> C
+            ..
+            Q1 -> D
+        A -> B -> C -> D 순으로 완료된다.
+
+    when a job enters the system, it it placed at the highest priority -> Rule 3
+        -> 일단 job이 들어오면, 가장 높은 우선순위를 준다. -> why? MLFQ는 이전 행동 기반으로 선택하므로, 추후 priority가 결정
+    If a job uses up entire time slice while running, its priority is reduced -> Rule 4a
+        -> job이 time slice 시간을 다 쓴다면 -> 우선순위가 내려간다. ex2 - B case
+    If a job gives up the CPU befor the time slice is up, it stays st the same priority level -> Rule 4b
+        -> job이 time slice 시간을 다 쓰지 않는다면 -> 우선순위를 계속 유지한다. ex - A case
+    => SJF (Shortest Job First)와 유사하다.
+    
+    Problem : Game the scheduler을 해결하기 위한 최종적인 Rule 4 (Better Accounting)
+    Once a job uses up its time allotment at a given level(regardless of how many times it has given up the CPU),
+    its priority is reduced (i.e it moves down on queue)
+        -> 주어진 일정시간 내에서 CPU를 점유했던 시간이 time allotment보다 많다면 priority level을 내린다.
+
+
+    ex3) A single Long - Running Job
+    Assumption 3 Level queue, 1EA process, time slice = 10ms
+        Q2 | run (10ms) | |
+        Q1 | | run (10ms) |
+        Q0 | | | run (10ms) run (10ms) run (10ms) ...
+    Q2에서 완료되지 않고, time slice 시간을 온전히 다 사용 -> Q1으로 이동 -> process가 하나 : 바로 Q1에서 실행 -> 온전히 다 실행 -> Q0가서 나머지 다 실행
+
+    ex4) Along Came a Short Job
+    Assumption 3 Level queue, 2EA process, time slice = 10ms
+        A : A long running CPU - intensive job
+        B : A short-running interactive job (20ms runtime) & arrive T = 100ms
+
+        Q2 | A (10ms) | | | B (10ms) |
+        Q1 | | A (10ms) | | | B (10ms)
+        Q0 | | | A (80ms) | | | A (operate)
+    100ms까지는 작동이 동일하며, 100ms에 B가 들어오면 Rule 3으로 인해 가장 highest priority를 가지며, 이후 Q1으로 내려가지만, 여기서 작업이 끝나고, 다시 Q0에 있는 A가 진행된다.
+
+    ex5) What About I/O
+    Assumption 3 Level queue, 2EA process
+        A : A long running CPU - intensive job -> locate Q0
+        B : An interactive job that need the CPU only for 1ms before performing and I/O -> locate Q2
+    B는 Q2에서 time slice의 모든 시간을 온전히 사용하지 않기에 priority를 유지한다. -> Rule 4b
+    B -> A -> B -> A .. 가 반복된다.
+
+***Problem : Starvation, Game the scheduler, A program may change its behavior over time.
+    Starvation
+        I/O interactive Job이 많다면, CPU intensive job은 거의 작동하지 않는다.
+    Game the scheduler
+        99.9..%를 써도 100%를 온전히 사용하지 않음 -> priority가 내려가지 않음 -> 독점 발생 가능
+    A program may change its behavior over Time
+        CPU intensive -> IO request 로 성격이 변해도 priority가 올라가지 못한다.  
+
+*** Rule 5 (Priority Boost)
+    Starvation, A program may change its behavior over Time를 해결하기 위해 고안된 방법
+    After some time period S, move all the jobs in the system to the topmost queue.
+        -> 일정 주기마다, 모든 잡들을 highest priority로 설정한다.
+
+*** Tuning MLFQ And Other Issues
+    low queue에 있는 CPU intensive한 job들은 runtime이 길다. -> time slice가 짧으면 context switch가 너무 자주 발생하여 overhead의 원인이 된다.
+    반면 high queue에 있는 IO job들은 time slice가 길 필요가 없다.
+
+    The high-priority queue -> Short time slices
+    The Low-priority queue  -> Longer time slices
