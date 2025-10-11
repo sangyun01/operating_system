@@ -15,8 +15,7 @@ MLFQ를 도입하기 전, 다음과 같은 4가지 가정을 세운다.
 3. All jobs only use CPU — CPU만 사용한다.  
 4. Run-time of each job is known — 각 job의 종료 시점을 알고 있다.
 
-이전 단계에서는 (1), (2), (3)을 relax(완화)하였고,  
-마지막으로 (4)를 relax하기 위해 MLFQ를 적용한다.
+이전 단계에서는 (1), (2), (3)을 relax(완화)하였고, 마지막으로 (4)를 relax하기 위해 MLFQ를 적용한다.
 
 ---
 
@@ -53,8 +52,7 @@ When a job enters the system, it is placed at the **highest priority**.
 ---
 
 ### 🧷 Rule 4  
-Once a job uses up its **time allotment** at a given level  
-(regardless of how many times it has given up the CPU),  
+Once a job uses up its **time allotment** at a given level  (regardless of how many times it has given up the CPU),  
 its priority is reduced.  
 → **시간 allotment를 초과한 경우 priority 강등**
 
@@ -114,8 +112,7 @@ Q1 -> D
 ---
 
 ### Better Accounting (Rule 4 확장)
-> 주어진 level에서 CPU 점유 시간이 **time allotment**보다 크면  
-> priority를 한 단계 낮춘다.
+> 주어진 level에서 CPU 점유 시간이 **time allotment**보다 크면 priority를 한 단계 낮춘다.
 
 ---
 
@@ -124,10 +121,10 @@ Q1 -> D
 
 ```
 Time (ms):  0     10    20    30    40    50
-             |-----|-----|-----|-----|-----|
+            |-----|-----|-----|-----|-----|
 Q2:          [ A ]  
 Q1:                [ A ]
-Q0:                      [ A ][ A ][ A ] ...
+Q0:                      [ A ] [ A ] [ A ] ...
 ```
 - Q2에서 time slice(10ms) 다 사용 → Q1으로 강등  
 - Q1에서도 다 사용 → Q0으로 강등  
@@ -141,11 +138,11 @@ A: Long-running CPU job
 B: Short interactive job (20ms runtime, arrive T = 100ms)
 
 ```
-Time (ms):  0     10    20    30    40    50    60    70    80    90   100   110   120
-             |-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|
-Q2:          [ A ][ A ][ A ][ A ][ A ][ A ][ A ][ A ][ A ][ A ][ B ][ B ]
-Q1:                                                        ↓ B done → back to Q0
-Q0:                                                                [ A continues ... ]
+Time (ms):  0     10    20    30    40    50    60    70    80    90   100   110   120   130
+            |-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|
+Q2:          [ A ]                                                       [ B ] [ B ]
+Q1:                [ A ]
+Q0:                      [ A ] [ A ] [ A ] [ A ] [ A ] [ A ] [ A ] [ A ]             [ A continues ... ]
 ```
 - B가 100ms에 도착 → Rule 3에 따라 **Q2에서 실행**  
 - 짧은 I/O job이므로 Q2 유지 후 종료  
