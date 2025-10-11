@@ -90,17 +90,14 @@ B: 75~99
 
 ## **U : Unfairness Metric**
 
-\[
-U = \frac{\text{First job completion time}}{\text{Second job completion time}}
-\]
+$$U = \frac{\text{First job completion time}}{\text{Second job completion time}}$$
 
 **예시**
 - 두 job의 실행시간이 각각 10이라면,  
   - 첫 번째 job 완료 : 10  
   - 두 번째 job 완료 : 20  
-  \[
-  U = \frac{10}{20} = 0.5
-  \]
+  $\text{Stride} = \frac{\text{A Large Number}}{\text{Number of Tickets}}$
+
   → **U가 1에 가까울수록 공정함 (Fair)**
   
 **해석**
