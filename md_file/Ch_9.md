@@ -109,9 +109,7 @@ $U = \frac{\text{First job completion time}}{\text{Second job completion time}}$
 ## **Stride Scheduling**
 
 ### **Stride 정의**
-$
-\text{Stride} = \frac{\text{A Large Number}}{\text{Number of Tickets}}
-$
+$\text{Stride} = \frac{\text{A Large Number}}{\text{Number of Tickets}}$
 
 **예시**
 
