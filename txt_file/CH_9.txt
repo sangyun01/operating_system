@@ -1,0 +1,101 @@
+* Scheduling : Proportional Share Scheduler
+
+** Proportional Share Scheduler
+    -> Fair-share scheduler이다.
+        HOW ? -> Using Tix
+    - Lottery Scheduling
+    - Stride Scheduling
+
+Tickets
+    Represent the share of a resource that a process should receive
+    The percent of tickets represents its share of the system resource in question.
+    -> 즉 자원 할당량을 tickets으로 가중치를 표현하였다.
+    ex) Two Processes, A and B.
+        total tickets : 100
+        Process A has 75 tickets -> receive 75% of the CPU
+        Process B has 25 tickets -> receive 25% of the CPU
+
+** Lottery Scheduling
+The scheduler picks a winning ticket.
+    -> Load the state of that winning process and runs it.
+
+    ex) Total tickets : 100 Two Processes, A and B.
+        Process A has 75 tickets -> 0 ~ 74
+        Process B has 25 tickets -> 75 ~ 99
+
+    sampling replacement를 통해 확률이 유지된다. -> 재선택이 가능하므로
+        ex) 뽑았는데 5가 나옴. 다음 뽑기 전 5를 집어 넣고 다시 뽑음 -> 확률 유지
+    
+    주의사항 : ticket desire와 실제 run time은 다를 수 있다.
+        -> run time이 길다면 거의 동일해진다.
+        -> run time이 짧다면 cpu 할당을 약속받은 만큼 할당을 받을 수 없게 된다. -> 단점
+
+*** Ticket Mechanisms
+    - Ticket currency
+        A user allocates tickets among their own jobs in whatever currency they would like.
+        The system converts the currency into the correct global value.
+            -> 쉽게 말해 ticket 100개있는데 실제로는 각 내부 process가 200개 필요하면, 1000으로 단위를 변경하지만, 실제 가치는 동일하다.
+        ex) There are 200 tickets (Global currency)
+            Process A has 100 tickets -> sub process A1 : 50 tickets -> 50으로 부족하다. -> 500 tickets 
+                                         sub process A2 : 50 tickets ->                -> 500 tickets
+            Process B has 100 tickets -> stay
+            -> Tix 개수가 증가하면, 세밀한 가중치 관리가 가능하다.
+                             
+    - Ticket transfer
+        A process can temporarily hand off its tickets to another process.
+            -> process 스스로 다른 process에게 양보 할 수 있다. : 주로 dependency한 관계에서 발생
+        ex) A process가 B process의 IO request를 필요로 함 -> A process의 작동이 의미가 없음 -> B가 동작하도록 A의 Tix를 양보한다. -> B가 동작하면 다시 돌려받는다.
+
+    - Ticket inflation
+        A process can temporarily raise or lower the number of tickets it owns.
+            -> process가 유동적으로 자체적으로 ticket 발행 취소가 가능하다.
+                -> 많이 필요로 하면 발행, 그다지 필요없으면 취소(양보)한다.
+        if any one process needs more cpu time, it can boosts its tickets.
+        따라서 사용량이 많은 여러 process가 있다면 경쟁이 많아지기에 잘 사용하지 않으며, 과도한 발행(독점)을 막기위해 OS에서 제약을 둔다.
+
+    ref. code_file -> Example_lottery_ticket_code
+
+** U : unfairness metric
+    The time the first job completes divided by the time that the second job completes.
+        U = first job completes / second job completes
+    ex) There are two jobs, each jobs has runtime 10.
+            First job finishes at time 10
+            Second job finishes at time 20
+            U = 10 / 20
+        -> when U is closed to 1 -> Fair한 Scheduling이다.
+    job length가 길다. -> Tix draw 횟수가 증가한다. -> 1에 가까워진다.
+    job length가 짧다. -> Tix draw 횟수가 적다. -> 금방 마무리 된다. -> unfairness할 수 있다.
+
+** Stride Scheduling
+Stride of each process
+Stride = (A Large number) / (the number of tickets of the process)
+    ex) A Large number = 10000
+        Process A has 100 tickets   -> stride of A is 100
+        Process B has 50 tickets    -> stride of B is 200
+
+Algorithm (pseudo code)
+current = remove_min(queue);        // 가장 low한 pass value 선택한다.
+schedule(current);                  // 해당 process를 실행한다.
+current->pass += current->stride;   // current를 stride만큼 증가시킨다.
+insert(queue, current)              // 다시 queue에 넣는다.
+
+    ex) Stride Scheduling Example
+    Assumption : 2개 이상의 processor가 동일한 pass value를 가진다면 left를 선택한다.
+                Large number = 10000, Tix_A = 100, Tix_B = 50, Tix_C = 250
+                    -> Stride A : 100 / Stride B : 200 / Stride C : 40  
+    |Pass(A)|Pass(B)|Pass(C)|Who Runs?|comments|
+    |0|0|0|A|all 0 -> left인 A 실행|
+    |100|0|0|B| B, C = 0 -> left인 B 실행|
+    |100|200|0|C|가장 작은 pass값 C 실행|
+    |100|200|40|C|가장 작은 pass값 C 실행|
+    |100|200|80|C|가장 작은 pass값 C 실행|
+    |100|200|120|A|가장 작은 pass값 A 실행|
+    |200|200|120|C|가장 작은 pass값 C 실행|
+    |200|200|160|C|가장 작은 pass값 C 실행|
+    |200|200|200|A|반복|
+    -> A : 2번, B : 1번, C : 5번 실행
+    -> Tix와 비례한다.
+    -> 즉 Stride가 낮다 -> 자주 실행, 높다 -> 가끔 실행
+    -> 단점 : 새로운 process가 들어오면 pass value가 동일해질 때까지 독점을 하게 된다.
+    -> A, C를 바라보면 U = 7/9가 된다.
+
