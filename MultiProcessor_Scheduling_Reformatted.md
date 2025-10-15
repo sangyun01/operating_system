@@ -1,0 +1,153 @@
+# **MultiProcessor Scheduling**
+
+------------------------------------------------------------------------
+
+## **1. Overview**
+
+기존 **ch.9**까지는 **Single Processor (CPU 1EA)** 환경만 고려하였다.\
+하지만 **MultiCore Processor** 환경에서는 여러 CPU 코어가 하나의 칩에
+포함되어 있으며,\
+병렬 실행을 통해 성능이 향상된다.
+
+> ⚠️ 단, CPU 개수에 비례해서 속도가 선형적으로 증가하지는 않는다.
+
+------------------------------------------------------------------------
+
+## **2. MultiCore Processor**
+
+-   **정의**\
+    Multiple CPU cores are packed onto a single chip.
+
+-   **특징**
+
+    -   단일 프로세서 대비 성능 향상\
+    -   하지만, 전체 코어 수에 비례하는 속도 증가를 보장하지 않음
+    -   하나의 프로세스는 **한 번에 하나의 CPU만 할당**
+        -   병렬 처리를 원한다면 → **Thread** 사용
+
+------------------------------------------------------------------------
+
+## **3. Hierarchical Memory Structure**
+
+  계층             예시       속도   용량   비용
+  ---------------- ---------- ------ ------ ------
+  Register         CPU 내부   ↑↑↑    ↓      ↑↑↑
+  Cache            L1, L2     ↑↑     ↓↓     ↑↑
+  Main Memory      DRAM       ↑      ↑      ↑
+  Backup Storage   Disk       ↓      ↑↑↑    ↓
+
+> **Data Path:**\
+> Disk → Main Memory → Cache Memory → Register
+
+------------------------------------------------------------------------
+
+### **Cache**
+
+-   **정의:** 작은 용량의 고속 메모리로, 자주 사용하는 데이터를 저장\
+-   **역할:** Main Memory의 데이터를 복사하여 CPU 접근 속도 향상\
+-   **Locality 활용**
+    -   **Temporal Locality (시간 지역성):** 반복문(loop)처럼 최근 접근
+        데이터 재사용\
+    -   **Spatial Locality (공간 지역성):** 배열(array)처럼 인접 데이터
+        동시 접근
+
+------------------------------------------------------------------------
+
+## **4. Problems in MultiProcessor Systems**
+
+### **(1) Cache Coherence**
+
+#### **문제 발생 과정**
+
+1.  Process A가 **CPU0**에서 실행되어 `main memory → cache`로 D를
+    가져옴\
+2.  이후 Process A가 **CPU1**로 migration → 다시 `main memory → cache`로
+    D를 가져옴\
+3.  **CPU1**에서 D가 D′로 변경됨\
+4.  이후 다시 **CPU0**로 migration → 여전히 **D**를 가지고 있음
+    (갱신되지 않음)
+
+#### **해결 방법**
+
+  ------------------------------------------------------------------------
+  방법                  설명                  장단점
+  --------------------- --------------------- ----------------------------
+  **Write Through       데이터 변경 시마다    데이터 일관성 ↑ / 속도 ↓
+  Method**              main memory 갱신      
+
+  **Bus Snooping**      Bus를 관찰하여 변화   병렬 처리 시 동기화 복잡도
+                        감지 시 invalid 신호  존재
+                        및 업데이트           
+
+  **Write Back Method** Cache에서 데이터를    성능 ↑ / 데이터 불일치 위험
+                        제거할 때만 main      존재
+                        memory 갱신           
+  ------------------------------------------------------------------------
+
+------------------------------------------------------------------------
+
+### **(2) Synchronization**
+
+-   **Mutual Exclusion Primitives** 사용\
+    → 여러 프로세스가 공유 자원에 동시에 접근하는 것을 방지한다.
+
+**예시** 1. Process A와 B가 같은 Queue에 접근하려 함\
+2. OS가 **Lock Key**를 A에게 할당 → B는 대기\
+3. A가 **Free & Unlock** 후에야 B가 접근 가능\
+→ Race Condition 방지
+
+------------------------------------------------------------------------
+
+## **5. Cache Affinity**
+
+> 가능한 한 동일한 CPU에서 프로세스를 계속 실행한다.\
+> → **Cache Coherence 문제를 줄이고 성능 향상**.
+
+------------------------------------------------------------------------
+
+## **6. SQMS (Single Queue MultiProcessor Scheduling)**
+
+-   모든 작업(job)을 **하나의 Queue**에 저장하여 관리\
+-   Scheduler가 이 Queue에서 job을 꺼내 각 CPU에 배분
+
+### **문제점**
+
+1.  **Lack of Scalability**
+    -   모든 CPU가 하나의 Queue에 접근하므로 **병목(bottleneck)** 발생\
+    -   CPU 수가 많아져도 성능 향상이 제한됨
+2.  **Cache Affinity 저하**
+    -   Process가 여러 CPU로 이동하므로 Cache 효율이 떨어짐
+    -   **Pinning (프로세스 고정)**으로 일부 해결 가능하지만, 구현이
+        복잡하고 scalability는 여전히 제한됨
+
+------------------------------------------------------------------------
+
+## **7. MQMS (Multi Queue MultiProcessor Scheduling)**
+
+-   각 CPU마다 **독립적인 Queue**를 유지 → Queue 간 정보 공유 없음\
+-   **Synchronization overhead 감소**, **Scalability 향상**\
+-   각 CPU는 **서로 다른 정책 (RR, FIFO 등)**을 적용할 수 있다.
+
+### **문제점 및 해결책**
+
+#### **(1) Load Imbalance**
+
+-   예시: Process 4개 중 3개만 존재, CPU 한쪽이 일찍 끝남 → **Workload
+    불균형**
+-   **해결:** Migration을 통해 작업을 이동 (Load Balancing)
+
+#### **(2) Monopolization**
+
+-   특정 CPU가 과도하게 일을 독점하는 상황 방지 필요\
+-   **해결:** **Work Stealing**
+    -   적은 작업을 가진 CPU를 **Source**, 많은 작업을 가진 CPU를
+        **Target**으로 설정\
+    -   Target의 Queue에서 일부 작업을 가져와(Source로 이동) 균형 유지\
+    -   단, Target Queue 접근 시 **Synchronization overhead** 발생\
+    -   그래도 SQMS보다 훨씬 적음
+
+------------------------------------------------------------------------
+
+**결론:**\
+MultiProcessor Scheduling은 **Scalability**와 **Cache Coherence**,
+**Load Balancing** 간의 Trade-off 관계를 조정하는 과정이다.
