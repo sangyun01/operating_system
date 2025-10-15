@@ -99,3 +99,4 @@ insert(queue, current)              // 다시 queue에 넣는다.
     -> 단점 : 새로운 process가 들어오면 pass value가 동일해질 때까지 독점을 하게 된다.
     -> A, C를 바라보면 U = 7/9가 된다.
 
+

@@ -136,3 +136,4 @@ Average Turnaround time = (90 + 100) / 2 = 95s
 Average Response time = (0 + 10) / 2 = 5s
 
 
+
