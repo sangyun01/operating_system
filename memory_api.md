@@ -1,0 +1,167 @@
+# Memory API
+
+## 1. Memory Allocation Interfaces
+
+리눅스에서 **heap memory를 allocate**하는 여러 인터페이스가 있다.
+
+### 1.1 Library calls (user-level)
+
+다음 함수들은 **library call**이며, **system call이 아니다.**
+
+- `malloc()`
+- `free()`
+- `calloc()`
+- `realloc()`
+
+하지만 이 함수들은 내부적으로 **system call인 `brk()`, `sbrk()`를 사용**하여  
+결국 **kernel mode에서 heap 영역을 늘리거나 줄인다.**  
+이 과정은 **컴파일러/라이브러리에서 자동으로 관리**된다.
+
+---
+
+## 2. 주요 함수들
+
+### 2.1 `malloc`
+
+- 프로그램 실행 중 **동적 메모리 할당이 필요할 때** 사용한다.  
+  (예: 사용자 입력 길이에 따라 메모리 크기가 달라지는 경우)
+- `malloc`은 **요청한 크기의 메모리 블록 앞에 meta data를 함께 저장**한다.  
+  - meta data에는 블록 크기 등 관리 정보가 들어 있음.
+- 함수의 반환값은 **실제 사용 가능한 영역의 시작 주소(pointer)** 이며,  
+  이 값이 `ptr` 등에 저장된다.
+
+---
+
+### 2.2 `sizeof`
+
+- `sizeof`는 **함수가 아니라 연산자(operator)** 이다.
+- **피연산자(대상이 무엇인지)**에 따라 결과가 달라진다.
+  - 포인터: **포인터 자체의 크기(주소 크기)**  
+  - 배열: **배열 전체의 크기(원소 수 × 각 원소 크기)**
+
+---
+
+### 2.3 `free`
+
+- `malloc`으로 할당한 메모리는 반드시 `free`로 해제해야 한다.
+- 할당된 블록 앞의 **meta data에 시작 주소와 크기 정보**가 들어 있으며,  
+  `free(ptr)` 호출 시 이 meta data를 활용해 올바르게 해제한다.
+- `free` 호출 후에는
+  ```c
+  ptr = NULL;
+  ```
+  처럼 **포인터를 `NULL`로 설정하여 dangling pointer를 방지**하는 것이 좋다.
+
+---
+
+## 3. Common Errors in Dynamic Memory Usage
+
+- forgetting to allocate memory  
+- not allocate enough memory  
+- forgetting to initialize allocated memory  
+- forgetting to free memory  
+- freeing memory while in use  
+- freeing memory repeatedly  
+- calling `free()` incorrectly  
+
+아래에서 각각 설명한다.
+
+---
+
+### 3.1 Forgetting to allocate memory
+
+- 변수를 **선언(declare)**만 하고, 실제로 **메모리를 할당하지 않은 상태에서**  
+  데이터를 복사하려고 하면 문제가 발생한다.
+- 예: 문자열을 복사할 공간이 없는데 `strcpy(dst, src);` 등을 호출하는 경우.
+- 해결:
+  ```c
+  char *dst = (char *)malloc(strlen(src) + 1);
+  ```
+
+---
+
+### 3.2 Not allocating enough memory
+
+- 예:
+  ```c
+  char *dst = (char *)malloc(strlen(src));   // ❌ \0 미고려
+  ```
+- 널 문자 `'\0'`를 위한 공간이 없으므로:
+  1. **segmentation fault**가 발생할 수 있다.
+  2. 문자열의 끝을 표시하는 `'\0'`이 **생략(omit)**될 수 있다.
+  3. **다른 메모리 영역을 덮어쓰는(overwrite)** 심각한 오류가 발생할 수 있다.
+
+- 올바른 예:
+  ```c
+  char *dst = (char *)malloc(strlen(src) + 1);   // ✅ \0 고려
+  ```
+
+---
+
+### 3.3 Forgetting to initialize allocated memory
+
+- `malloc`으로 할당한 메모리는 **초기화되지 않은 상태**이며,
+  **쓰레기 값(garbage value)**가 들어 있다.
+- 이를 초기화하지 않고 사용하면 **알 수 없는 값**을 읽게 되어 버그를 유발할 수 있다.
+- 필요한 경우:
+  - `calloc()`을 사용하여 0으로 초기화하거나,
+  - `memset()` 등으로 직접 초기화한다.
+
+---
+
+### 3.4 Forgetting to free memory
+
+- 동적으로 할당한 메모리를 **`free`하지 않으면**  
+  계속 사용 중인 것으로 간주되어 **memory leak**이 발생한다.
+- 프로그램이 길게 실행되거나 반복적으로 메모리를 할당/해제할 때  
+  leak이 누적되면 **메모리가 고갈**될 수 있다.
+
+---
+
+### 3.5 Freeing memory while in use
+
+- 아직 필요한 메모리를 **사용 중인데 먼저 `free`해버리는 경우** 발생.
+- 예: linked list에서 **중간 노드 포인터를 `free`**해버리면  
+  이후 노드에 **도달할 수 있는 경로가 끊어진다.**
+- 이처럼 **해제된 메모리를 가리키는 포인터를 계속 사용하는 것**을  
+  **dangling pointer**라고 한다.
+
+---
+
+### 3.6 Freeing memory repeatedly
+
+- 같은 주소를 **두 번 이상 `free`**하는 경우.
+- 이는 **double free**로,  
+  메모리 관리 구조가 깨질 수 있고 **undefined behavior**를 유발한다.
+- 보통 한 번 `free`한 후에는
+  ```c
+  free(ptr);
+  ptr = NULL;
+  ```
+  처럼 처리하는 습관을 들이면 예방에 도움이 된다.
+
+---
+
+### 3.7 Calling `free()` incorrectly
+
+- `malloc`으로 할당된 블록은 **앞쪽에 meta data**가 붙는다.
+- 따라서 **항상 `malloc`이 반환한 포인터 그대로**를 `free`해야 한다.
+- 예를 들어:
+  ```c
+  free(ptr + 3);   // ❌ meta data 기준이 깨져 오류 발생 가능
+  ```
+  이런 식으로 **변형된 주소를 `free`하면 meta data에 접근할 수 없어**  
+  심각한 오류가 발생할 수 있다.
+
+---
+
+## 4. System Calls: `brk()`, `sbrk()`
+
+- `brk()`, `sbrk()`는 **heap의 끝 지점(program break)을 조정하여**
+  - heap size를 늘리거나,
+  - 줄이는 데 사용하는 **system call**이다.
+- 이들은 **커널 레벨에서 동작하는 저수준 인터페이스**이며,
+  **일반 프로그래머가 직접 사용하는 것은 지양**하는 것이 좋다.
+- 일반적으로는 `malloc`, `free`와 같은 **라이브러리 함수들이 내부적으로 적절히 사용**한다.
+
+---

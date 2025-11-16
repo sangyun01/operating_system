@@ -1,0 +1,67 @@
+* Memory API
+
+** memory allocation interfaces
+linux에서 heap memory를 allocate하는 여러 interface
+
+libarary call로는
+malloc(), free(), calloc(), realloc()이 있으며 system call이 아니다.
+위의 함수들이 자체적으로 system call 함수인 brk(), sbrk()를 사용하여 따라서 kernel mode에서 동작한다.
+이는 compiler에서 자동적으로 관리한다.
+
+*** malloc
+program 실행 중 memory 할당이 필요할 때, 즉 사용자에게 입력받은 경우 호출된다.
+이때 malloc으로 할당하면 앞에 meta data도 함께 저장이 되며 시작 주소는 ptr로 결과를 반환한다.
+
+*** sizeof
+sizeof는 함수가 아닌 operator이며, declarations에 따라 결과가 달라진다.
+pointer의 경우라면 pointer size 즉 주소크기가, array면 배열 전체의 크기가 반환된다.
+
+*** free
+malloc을 선언한 경우 free가 사용이 되며, meta data에 시작주소와 주소범위가 들어있으며,
+따라서 free가 호출되면 meta data를 확인한다.
+이때 free를 한 후에는 null을 선언해주어야, dangling pointer를 방지한다.
+
+** Common Error
+- forgetting to allocate memory
+- not allocate enough memory
+- forgetting to initialize allocated memory
+- forgetting to free memory
+- freeing memory whild in use
+- freeing memory repeatedly
+- calling free() incorrectly
+
+*** forgetting to allocate memory
+declare를 하였지만, initialize가 되지 않아 복사한 값을 넣을 공간이 없다
+-> 할당이 필요한 공간만큼 할당한 후에 값을 넣는다.
+ex) (char *)malloc(strlen(src)+1);
+
+*** not allocate enough memory
+만약 (char *)malloc(strlen(src)+1)가 아닌
+(char *)malloc(strlen(src))라고 작성한다면, 즉 \0를 고려하지 않은 상황이다.
+이러한 경우 아래의 오류가 발생할 수 있다.
+    1. segment fault를 발생할 수 있다.
+    2. \0이 omit 될 수 있다.
+    3. 다른 mem에 overwrite가 발생할 수 있다.
+
+*** forgetting to initialize allocated memory
+allocate를 하였지만, 초기화를 하지 않는다면 known value가 들어가있다.
+즉 잘못된 값을 읽을 수 있다.
+
+*** forgetting to free memory
+free를 안한 경우 memory가 부족하여 memory leak가 발생할 수 있다.
+
+*** freeing memory whild in use
+linked list에서 중간 pointer를 free를 하게 되면, 다음 단계로 절대 도달할 수 없다.
+이러한 경우를 dangling pointer라고 한다.
+
+*** freeing memory repeatedly
+같은 공간을 2번 이상 free한 경우 에러가 발생하며,  undefined behavior가 발생할 수 있다.
+
+*** calling free() incorrectly
+allocate를 하면 가장 상단에 meta data가 있으며,
+따라서 free(ptr+3)을 하게 되는 경우 접근을 하지 못하여 error가 발생할 수 있다.
+
+*** system call: brk(), sbrk()
+heap size를 늘리거나, 줄이는 경우 사용이 되며 system call이기에 programmer는 할 수 있더라도 지양을 해야한다.
+
+
