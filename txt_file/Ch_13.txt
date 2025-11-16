@@ -1,0 +1,32 @@
+*Memory Virtualization
+- Os virtualizes its physical memory
+- Os provides an illusion memory space per each process
+- It seems to be seen like process uses the whole memory
+
+즉 physical memory를 여러 process가 가상화를 이용하여 사용하며, 이는 CPU Virtualization과 유사하다.
+
+---
+Load only one process in memory -> Poor utilization and efficiency
+    -> 초기의 OS는 한 번에 하나씩만 올려서 효율성과 성능이 감소하였다.
+
+** Multipromramming and Time sharing
+Load multiple processes in memory
+    -> 따라서 Time sharing기반으로 동작을 하게 된다.
+
+대신 protection issue가 야기되는데, 이로 Errant memory가 발생한다.
+ex) process C가 pointer를 써서, A가 쓰던 memroy에 접근 하는 경우
+
+따라서 이를 해결하기 위해서 OS는 abstraction of physical memory, 즉 물리적 memory를 추상화한다.
+이는 각 memory를 isolate된 memory로 간주한다.
+physical memory와 address space를 mapping을 통해 설명한다.
+
+** address space는
+code, heap, stack, data로 이루어져 있으며
+heap과 stack은 공간이 변화가 가능하다.
+
+Every address in a running program is virtual.
+즉 OS에서 가상 메모리를 물리적 메모리로 translatre를 해준다.
+
+address의 경우는 해당 범위내에서 값이 출력되며, 가장위에서부터 할당되지는 않는다.
+
+
