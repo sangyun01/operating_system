@@ -1,0 +1,53 @@
+* Segmentation
+
+Address space에서 CODE, DATA, HEAP, STACK을 사용하면서, 내부에 있는 free space는 외부 즉 physical mem에서 바라본 경우 사용되는 공간으로 보이게 된다.
+따라서 이를 해결하기 위해 도입된 개념은 Segmentation이다.
+즉 이전까지는 하나의 process는 하나의 base와 bound를 가졌다면, Segmentation으로 인하여
+code, data, heap, stack 각각이 base와 bound를 가지게 된다.
+
+** Explicit approach
+top few bits에 따라 segment를 결정한다.
+|segment|bits|
+|code|00|
+|heap|01|
+|-|10|
+|stack|11|
+
+즉 4200라면, 01 0000 0110 1000 -> 01 -> HEAP이다.
+따라서 SEG_MASK로 11 0000 0000 0000과 SHIFT 12를 하면 해당 segment를 결정할 수 있으며
+OFFSET_MASK로 00 1111 1111 1111을 통해 해당 offset을 결정한다.
+
+Address Translation on Segmentation
+- CODE
+physical address = offset + base
+ex) offset of virtual address = 100, base = 32KB
+physical address = 100+32KB = 32868
+
+- HEAP
+ex) offset of virtual address = 4200 - 4KB = 104, BASE = 34KB
+physical address = 104 + 34KB = 34920
+이때 할당된 heap의 주소 이상을 사용하게 된다면, Segmentation fault 즉 error가 발생한다.
+
+- STACK
+stack의 경우는 CODE, HEAP과 달리 방향이 neg로 증가하기에 
+negative offset = offset - maximum segment size
+physical address = negative offset + base로 연산한다.
+ex) BASE = 28KB, OFFSET = 3KB, maximum segment size = 4KB
+physical address = 3KB - 4KB + 28KB = 27KB이다.
+
+** Support for Sharing
+segment는 address space를 Sharing이 가능하며, protection bits가 있다.
+code의 경우는 read-execute, heap과 stack의 경우는 read-write이다.
+즉 code의 경우는 write가 heap, stack의 경우는 execute가 불가능하다.
+
+- Coarse-Grain
+큰 단위로 분류한다. -> code, heap, stack
+- Fine-Grain
+더 작은 단위로 분류한다. -> 따라서 HW는 segment table이 요구된다.
+
+*** External Framentation
+free space가 작게 있어, 추가적인 할당이 불가능하여, 재배치가 필요로 하는 경우이다.
+
+이를 해결하기 위해서 compaction이 고안되었으며, 실제로는 paging을 더 자주 쓴다.
+
+
