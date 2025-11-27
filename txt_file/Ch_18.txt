@@ -1,0 +1,81 @@
+* Paging
+
+** Concept of Paging
+Paging splits up address space into fixed-sized unit called a page.
+-> paging은 고정된 사이즈 단위로 분리되어, physical mem과 virtual mem 모두 동일한 사이즈를 가지도록 한 기법이다.
+이때 physical mem은 physical frame number, virtual mem은 virtual page number라고 한다.
+VPN (Virtual Page Number)를 PFN (Physical Frame Number)로 translate하기 위해서 Page Table을 이용한다.
+
+따라서 fixed sized unit이기에 flexibility(mapping만 하면 되므로)와 simplicity(동일한 크기이므로 allocate와 free가 쉽다.)의 성질을 가지는 장점을 가진다.
+
+Page Table은 Physical mem에 존재하는데 이러한 이유로는 VPN의 bit수가 많아진다면, Entry의 수가 2^n으로 증가하기에 많은 space를 필요로 한다.
+따라서 reg가 아닌 physical mem에 존재한다. 따라서 Page Table은 VPN -> PFN을 translate하는 역할로 index를 가지고 있다.
+
+ex)
+Address Space
+|addr|page|
+|---|---|
+|0 ~ 15|page 0|
+|16 ~ 31|page 1|
+|32 ~ 47|page 2|
+|48 ~ 63|page 3|
+
+Page Table
+|index|
+|---|
+|3|
+|7|
+|5|
+|2|
+
+Physical Memory
+|addr|data|page|
+|---|---|---|
+|0 ~ 15|reserved of OS|page frame 0|
+|16 ~ 31|unused|page frame 1|
+|32 ~ 47|page 3 of AS|page frame 2|
+|48 ~ 63|page 0 of AS|page frame 3|
+|64 ~ 79|unused|page frame 4|
+|80 ~ 95|page 2 of AS|page frame 5|
+|96 ~ 111|unused|page frame 6|
+|112 ~ 127|page 1 of AS|page frame 7|
+
+** Address Translation
+Two components
+- VPN
+- Offset
+
+ex)
+if 64byte, and offset is 16byte
+entry -> 64/16 = 4EA -> 2bit
+offset -> 16B -> 4bit
+
+total 6bit -> when virtual address is 21 -> 010101 -> 01 | 0101 -> page 1 & offset 5
+also when the page table, VPN(1) -> PFN(7)
+then 111 | 0101 -> translate the address and offset is maintain
+conclusion => physical address : 1110101
+
+*** Common Flags of page table entry
+- valid bit
+- protection bit
+- present bit
+- dirty bit
+- reference bit
+
+** Paging
+paging 기법의 경우 상대적으로 speed가 낮은데 이러한 이유로는
+paging의 진행과정에서
+1. page table location -> page table의 시작 위치를 알야야 한다.
+2. VPN : find entry -> 이후 entry(VPN)를 찾은 후
+3. PTE : PFN    -> Page Table의 해당 entry를 찾기 위해 mem access를 해야한다.
+4. VPN -> PFN   -> Translate
+
+따라서 3번의 과정으로 인하여 slow의 주요한 원인이 된다.
+
+ex) pseudo code
+VPN = (virtualaddress & vpn_mask) >> SHIFT // diff about system
+
+PTEaddr = PTBR + (VPN*sizeof(PTE))
+// 특정 entry의 주소는 PTBR(reg에서 가져옴) + VPN에 entry의 사이즈만큼 곱하면 구할 수 있다.
+
+
