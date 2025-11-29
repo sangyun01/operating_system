@@ -1,0 +1,53 @@
+* Advancde Page Tables
+
+** Paging : Linear Tables
+32bit의 AS를 4KB의 pages로 나누며, 이때 Page Table entry는 4B라면
+Page Table Size는 (2^32 / 2^12) * 2^2 = 2^2 * 2^20 = 4MB이다. 
+
+따라서 Page Table의 Size가 너무 크기에 이를 해결하기 위해서 간단한 방법으로는 Pages를 키우면
+Pages : 4KB -> 16KB
+Page Table Size는 (2^32 / 2^14) * 2^2 = 2^20 = 1MB이다. 
+이 경우 Page가 크기에 사용되지 않고, 낭비되는 부분이 많아지게 된다.
+따라서 중간 부분을 사용하지 않더라도, 공간은 차지해야하기에 효율이 떨어지는 것을 확인할 수 있다.
+
+** Hybrid Approach : Paging and Segments
+Page Table을 각 Segment로 분류하여 크게 3개로, CODE, HEAP, STACK으로 분리한다.
+3개 이상으로도 가능하지만, 효율이 좋지 않기에 주로 3개로 분류한다.
+
+따라서
+|seg Val|Content|
+|---|---|
+|00|unused|
+|01|CODE|
+|10|HEAP|
+|11|STACK|
+
+하지만 이 경우에도 segment의 크기가 크다면, 이전과 동일한 문제(external fragmentation)가 발생하기에 다른 방법을 고안해야한다.
+
+** Multi-level Page Tables
+Linear Page Table -> Tree 구조와 같이 표현한다.
+이는 사용되지 않는 부분을 할당하지 않기에, 자원 차원에서 많은 이득을 가지게 된다.
+따라서 Multi Level을 표현하기 위해서 Page Directory라는 개념이 필요하며
+Page Directory -> Page Table -> Phymem과 같은 형태로 존재하게 된다.
+따라서 PD의 경우는 어떠한 PT를 사용하는지, PT의 경우는 해당 VPN에 해당하는 PFN을 가지고 Translate한다.
+이 구조를 적용함으로써 할당하는 부분에서 효율적으로 낭비없이 가능하며, 단점으로는 복잡도와 경로가 증가함에 따라 시간이 증가하게 된다.
+
+ex) Single Level Paging
+AS : 16KB -> 2^14 & Page : 64B -> 2^6
+이는 OFFSET은 6bit이며, 따라서 VPN은 8bit이다.
+따라서 entry의 개수는 2^8개이며, 각 entry의 size는 4B이므로 총 1KB의 Page Table Size를 가지며
+각 Page size는 64B이므로, 1KB / 64B = 16 즉, 16page -> 4bit
+
+따라서 8Bit의 VPN을 4bit의 Page Directory와 4bit의 Page Table로 나누어서 사용한다.
+
+하지만 몇몇 경우는 더 deep page Directory를 필요로 한다.
+ex) 
+AS : 30bit & Page : 512 -> 2^9
+따라서 이 경우는 VPN이 30-9 = 21bit가 필요로 하며,
+PTE의 경우 512B에서 각 size는 4B이므로 128EA -> 2^7개의 index가 사용된다.
+따라서 Page Directory는 2^14이지만, size를 넘기기에 더 추가된 PD가 필요하다.
+따라서 Page Directory를 2개로 두어 2^7의 Page Directory 1, 그 아래 level에 Page Directory 2를 두어 이를 해결한다.
+
+** Inverted Page Table
+이는 Page Table과 반대되는 개념으로 Page Table의 경우는 VPN -> PFN이지만, Inverted Page Table의 경운 PFN->VPN으로 변환을 해주는 작업을 한다.
+
