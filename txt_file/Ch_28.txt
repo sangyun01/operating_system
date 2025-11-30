@@ -1,0 +1,108 @@
+* LOCK
+
+mutual exclusion으로 인하여 lock이 필요하다.
+즉 critical section에 대하여 single atomic instuction으로 동작하도록 설계를 해야한다.
+따라서 이를 효율적으로 관리하기 위해서는 HW & OS로 함께 설계를 해야한다.
+
+** LOCK - Basic Criteria
+- Mutual Exclusion
+    -> Lock을 하는 가장 주요한 원인
+- Fairness
+    -> 다른 process나 thread가 starvation이 발생하는지 확인한다.
+- Performance
+    -> time overhead를 확인한다. 즉 multi thread를 적용한 이유는 faster하기 위해서.
+
+*** Disable interrupt
+최초의 고안한 방법으로 물리적으로 disable하도록 설계한다.
+이때 문제점은 app의 자유도가 높아지며, multiprocessor에서 동작을 하지 않으며, 물리적으로 disable하기에 여러 signal의 신호가 누락될 수 있다.
+
+*** Test and Set
+TestAndSet는 HW로 구현이 되어있으며, 이를 C로 표현하면 아래와 같다.
+
+int TestAndSet(int *ptr, int new) {
+    int old = *ptr;   // fetch old value at ptr
+    *ptr = new;       // store 'new' into ptr
+    return old;       // return the old value
+}
+즉 위의 코드가 동시에 일어난다.
+
+void lock(lock_t *lock) {
+    while (TestAndSet(&lock->flag, 1) == 1)
+        ;   // spin-wait
+}
+-> 다른 process나 thread가 계속하여 lock, unlock 상태를 보면서 wait한다.
+    -> wait을 하면서 다른 processor, thread는 실행이 되지 않는다.
+
+유사한 방법으로는 Compare and Swap이 있으며 이 방법이 부하가 덜하다.
+-> 항상 lock을 하는 것이 아니므로
+
+- Evaluate Spin Lock
+    - Mutual Exclusion(Correctness) -> Yes
+    - Fairness -> No
+    - Performance -> No
+
+*** Fetch And Add
+int FetchAndAdd(int *ptr) {
+    int old = *ptr;
+    *ptr = old + 1;
+    return old;
+}
+Fetch And Add는 ticket machine이라고도 하며
+즉 locking중에 thread가 도착한다면 순차적으로 ticket을 분배하여, 공정성을 높인다.
+이전에는 매턴마다 빠르게 오는 thread가 가져갔다.
+- Evaluate Spin Lock
+    - Mutual Exclusion(Correctness) -> Yes
+    - Fairness -> Yes
+    - Performance -> No
+하지만 spinning의 자원이 아직 너무 많은 소모를 되며 따라서 Performance가 감소하게 된다.
+이를 해결하기 위해서 OS를 이용하여 추가적으로 구현을 한다.
+
+*** Justh Yield
+대게 OS는 당장의 동작의 필요가 없다면 양보하려는 성질을 가지고 있기에 spinning하는 thread가 다른 thread에게 양보를 한다.
+
+void lock() {
+    while (TestAndSet(&flag, 1) == 1)
+        yield();    // give up the CPU
+}
+
+*** Using Queue
+park, unpark를 이용하여 해결한다.
+즉 spinning하는 thread를 park하여 sleep state로 변경하여 Queue에 삽입하며
+unpark를하여 sleep -> ready state로 변경하여 동작시킨다.
+
+typedef struct __lock_t {
+    int flag;
+    int guard;
+    queue_t *q;
+} lock_t;
+
+void lock(lock_t *m) {
+    while (TestAndSet(&m->guard, 1) == 1)
+        ;   // acquire guard lock by spinning
+
+    if (m->flag == 0) {
+        m->flag = 1;      // lock is acquired
+        m->guard = 0;
+    } else {
+        queue_add(m->q, gettid());
+        m->guard = 0;
+        park();
+    }
+}
+
+void unlock(lock_t *m) {
+    while (TestAndSet(&m->guard, 1) == 1)
+        ;   // acquire guard lock by spinning
+
+    if (queue_empty(m->q)) {
+        m->flag = 0;      // let go of lock; no one wants it
+    } else {
+        unpark(queue_remove(m->q));    // hold lock for next thread!
+    }
+
+    m->guard = 0;
+}
+
+이때 flag과 같은 동작을 하는 2nd flag로 guard가 있으며, queue에서 판단을 할 때에도 마찬가지로 critical section이므로, spinning이 발생하지만, 이전보다 덜하게 발생함을 확인할 수 있다.
+
+
