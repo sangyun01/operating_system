@@ -1,0 +1,48 @@
+* Concurrency
+
+** Thread
+single running process에 대해서 abstraction한 것이다.
+
+*** multi threaded program
+- a multi threaded program has more than one point of execution
+    -> 하나의 process를 여러 조각으로 낸다.
+- multiple PCs
+    -> 각각의 thread는 각각의 PC를 가진다. stack이 서로 다르기에
+- share the same address space
+    -> address space를 공유한다. 즉 code와 heap을 공유한다.
+
+when switching from running one T1 to running the other T2
+Thread도 Context switch가 일어나며, 이때 각자 고유한 TCBs를 가지고, state를 saved, restore를 진행한다.
+
+*** why using Thread
+single-threaded program
+    -> straightforward, slow => 간단하지만, 느리다.
+multi-threaded program
+    -> 동시성이 올라가기에 속도가 증가할 확률이 매우 높다.
+    즉 Parallelization이 가능하다.
+    또한 slow I/O의 문제를 해결할 수 있다.
+        ex) mail을 작성하면서, 동시에 파일 첨부가 가능하다.
+
+이때 trade off 관계로 단점이 발생하게 되며 이는 Race Condition으로 결과가 결정되지 않는다는 단점이 있다.
+따라서 이를 해결하기 위해서 Critical section을 통해 해결하며 즉, mutual exclusion으로 lock, unlock을 사용하여 해결한다.
+
+ex)
+|Thread1|Thread2|PC|%eax|Counter|
+|----|----|----|----|----|
+|mov||105|50|50|
+|add||108|51|50|
+||mov|105|50|50|
+||add|108|51|50|
+||mov|113|51|51|
+|restore||108|51|50|
+|mov|113|51|51|
+
+-> result is not determine 51 or 52
+
+*** SOL
+여러 stage를 하나로 이루어진 코드로 만든다. -> RISC system에 적합하지 않는다.
+따라서 lock을 이용하여 이를 해결한다.
+이때 SW로만 이루어지도록 설계를 하지 않으며 HW와 SW가 복합적으로 동작하도록 설계한다.
+SW로 설계를 한다면 flag를 이용하여 lock unlock을 하지만, 이전에 interrupt가 발생하여 문제가 발생할 수 있는 no mutual exclusion 상태이다.
+또한 lock을 하게 되면 다른 process와 thread가 계속하여 wait상태를 확인하면서 계속하여 CPU 자원이 소모가 되므로, HW로 설계를 진행한다.
+
