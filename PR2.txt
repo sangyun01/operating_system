@@ -1,0 +1,65 @@
+# 패키지 목록 업데이트
+sudo apt-get update
+
+# 필수 빌드 도구 설치
+sudo apt-get install build-essential
+
+# 만약 오류 발생 시 아래 명령 실행 후 다시 build-essential 설치
+sudo dpkg --configure -a
+sudo apt --fix-broken install
+# 또는 오류 메시지를 보고 지시에 따라 해결
+
+# git, nasm, gdb 설치
+sudo apt-get install git nasm gdb
+
+# qemu 설치 (x86 에뮬레이터 포함)
+sudo apt-get install qemu qemu-system-x86
+
+# xv6 소스코드 클론
+git clone http://www.github.com/mit-pdos/xv6-public.git
+
+# 디렉토리 목록 확인
+ls
+# 또는 상세 목록 확인
+ls -al
+
+# 다운로드한 xv6 디렉토리로 이동
+cd xv6-public
+
+# 파일 목록 확인
+ls
+# 또는 상세 목록 확인
+ls -al
+
+# xv6를 컴파일하고 터미널 모드로 실행
+make qemu-nox
+
+#include "types.h"
+#include "stat.h"
+#include "user.h"
+
+int
+main(int argc, char *argv[])
+{
+    int rc = fork();
+    printf(1, "hello world (pid:%d)\n", getpid());
+
+    if (rc < 0) {           // fork failed; exit
+        exit();
+    } else if (rc == 0) {   // child (new process)
+        printf(1, "hello, I am child (pid:%d)\n", getpid());
+        exit();
+    } else {                // parent goes down this path (main)
+        wait();
+        printf(1, "hello, I am parent of %d (pid:%d)\n", rc, getpid());
+        exit();
+    }
+
+    return 0;
+}
+
+# xv6 다시 빌드하고 실행
+make qemu-nox
+
+# xv6 내부 쉘에서 실행
+printPID
