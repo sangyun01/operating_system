@@ -1,0 +1,179 @@
+#include "types.h"
+#include "x86.h"
+#include "defs.h"
+#include "date.h"
+#include "param.h"
+#include "memlayout.h"
+#include "mmu.h"
+#include "proc.h"
+
+int
+sys_mysyscall(void)
+{
+    int pid;
+    if (argint(0, &pid) < 0)
+        return -1;
+    cprintf("[SYSCALL] hello user PID:%d\n", pid);
+    return 0;
+}
+
+
+// System call numbers
+#define SYS_fork      1
+#define SYS_exit      2
+#define SYS_wait      3
+#define SYS_pipe      4
+#define SYS_read      5
+#define SYS_kill      6
+#define SYS_exec      7
+#define SYS_fstat     8
+#define SYS_chdir     9
+#define SYS_dup       10
+#define SYS_getpid    11
+#define SYS_sbrk      12
+#define SYS_sleep     13
+#define SYS_uptime    14
+#define SYS_open      15
+#define SYS_write     16
+#define SYS_mknod     17
+#define SYS_unlink    18
+#define SYS_link      19
+#define SYS_mkdir     20
+#define SYS_close     21
+#define SYS_mysyscall 22
+
+
+extern int sys_chdir(void);
+extern int sys_close(void);
+extern int sys_dup(void);
+extern int sys_exec(void);
+extern int sys_exit(void);
+extern int sys_fork(void);
+extern int sys_fstat(void);
+extern int sys_getpid(void);
+extern int sys_kill(void);
+extern int sys_link(void);
+extern int sys_mkdir(void);
+extern int sys_mknod(void);
+extern int sys_open(void);
+extern int sys_pipe(void);
+extern int sys_read(void);
+extern int sys_sbrk(void);
+extern int sys_sleep(void);
+extern int sys_unlink(void);
+extern int sys_wait(void);
+extern int sys_write(void);
+extern int sys_uptime(void);
+extern int sys_mysyscall(void);
+
+
+static int (*syscalls[])(void) = {
+  [SYS_fork]    sys_fork,
+  [SYS_exit]    sys_exit,
+  [SYS_wait]    sys_wait,
+  [SYS_pipe]    sys_pipe,
+  [SYS_read]    sys_read,
+  [SYS_kill]    sys_kill,
+  [SYS_exec]    sys_exec,
+  [SYS_fstat]   sys_fstat,
+  [SYS_chdir]   sys_chdir,
+  [SYS_dup]     sys_dup,
+  [SYS_getpid]  sys_getpid,
+  [SYS_sbrk]    sys_sbrk,
+  [SYS_sleep]   sys_sleep,
+  [SYS_uptime]  sys_uptime,
+  [SYS_open]    sys_open,
+  [SYS_write]   sys_write,
+  [SYS_mknod]   sys_mknod,
+  [SYS_unlink]  sys_unlink,
+  [SYS_link]    sys_link,
+  [SYS_mkdir]   sys_mkdir,
+  [SYS_close]   sys_close,
+
+  [SYS_mysyscall] sys_mysyscall,
+};
+
+
+#include "traps.h"
+
+#define SYSCALL(name) \
+    .globl name; \
+name: \
+    movl $SYS_ ## name, %eax; \
+    int $T_SYSCALL; \
+    ret
+
+SYSCALL(mysyscall)
+SYSCALL(fork)
+SYSCALL(exit)
+SYSCALL(wait)
+SYSCALL(pipe)
+SYSCALL(read)
+SYSCALL(write)
+SYSCALL(close)
+
+
+struct stat;
+struct rtcdate;
+
+// system calls
+int mysyscall(int);
+int fork(void);
+int exit(void) __attribute__((noreturn));
+int wait(void);
+int pipe(int*);
+int write(int, const void*, int);
+int read(int, void*, int);
+int close(int);
+int kill(int);
+int exec(char*, char**);
+int open(const char*, int);
+int mknod(const char*, short, short);
+int unlink(const char*);
+int fstat(int fd, struct stat*);
+int link(const char*, const char*);
+int mkdir(const char*);
+int chdir(const char*);
+int dup(int);
+int getpid(void);
+int sbrk(int);
+int sleep(int);
+int uptime(void);
+
+
+#include "types.h"
+#include "stat.h"
+#include "user.h"
+
+int main(void) {
+    mysyscall(getpid());
+    exit();
+}
+
+
+#include "types.h"
+#include "stat.h"
+#include "user.h"
+
+int main(int argc, char *argv[])
+{
+    int rc = fork();
+    printf(1, "hello world (pid:%d)\n", getpid());
+
+    if (rc < 0) {   // fork failed; exit
+        exit();
+    } else if (rc == 0) {   // child (new process)
+        printf(1, "hello, I am child (pid:%d)\n", getpid());
+        mysyscall(getpid());
+        exit();
+    } else {   // parent goes down this path (main)
+        wait();
+        printf(1, "hello, I am parent of %d (pid:%d)\n", rc, getpid());
+        mysyscall(getpid());
+        exit();
+    }
+
+    return 0;
+}
+
+
